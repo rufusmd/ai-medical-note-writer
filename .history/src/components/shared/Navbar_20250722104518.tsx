@@ -13,7 +13,7 @@ export function Navbar() {
     const pathname = usePathname();
     const profileMenuRef = useRef<HTMLDivElement>(null);
 
-    // Define main navigation items - DASHBOARD STRUCTURE
+    // Define main navigation items - TEMPORARY TEST
     const navigation = [
         {
             name: 'Dashboard',
@@ -26,7 +26,7 @@ export function Navbar() {
         },
         {
             name: 'Patients',
-            href: '/dashboard/patients',  // BACK TO /dashboard/ prefix
+            href: '/patients',  // REMOVED /dashboard/ prefix
             icon: (
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -35,7 +35,7 @@ export function Navbar() {
         },
         {
             name: 'Templates',
-            href: '/dashboard/templates',  // BACK TO /dashboard/ prefix
+            href: '/templates',  // REMOVED /dashboard/ prefix
             icon: (
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -44,7 +44,7 @@ export function Navbar() {
         },
         {
             name: 'Notes',
-            href: '/dashboard/notes',  // BACK TO /dashboard/ prefix
+            href: '/notes',  // REMOVED /dashboard/ prefix
             icon: (
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -53,7 +53,7 @@ export function Navbar() {
         },
         {
             name: 'Library',
-            href: '/dashboard/library',  // BACK TO /dashboard/ prefix
+            href: '/library',  // REMOVED /dashboard/ prefix
             icon: (
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
@@ -182,7 +182,7 @@ export function Navbar() {
                                             </div>
                                             <Link
                                                 href="/dashboard/settings"
-                                                className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                                 role="menuitem"
                                                 onClick={() => setShowProfileMenu(false)}
                                             >
