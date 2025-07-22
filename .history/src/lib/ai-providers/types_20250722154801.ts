@@ -143,7 +143,6 @@ export interface ProviderComparisonResult {
 export interface AIProvider {
     name: 'gemini' | 'claude';
     generateNote(request: NoteGenerationRequest): Promise<NoteGenerationResponse>;
-    generateNoteWithPrompts(request: NoteGenerationRequest, systemPrompt: string, userPrompt: string): Promise<NoteGenerationResponse>;
     validateEpicSyntax(content: string): EpicSyntaxValidation;
     isHealthy(): Promise<boolean>;
 }

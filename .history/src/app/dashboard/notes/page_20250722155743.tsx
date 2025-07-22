@@ -1,9 +1,8 @@
-// src/app/dashboard/notes/page.tsx - Enhanced with Clinical Context System
+// src/app/dashboard/notes/page.tsx - Complete Note Generation Interface
 'use client';
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import ClinicalContextSelector, { ClinicalContext } from '@/components/clinical/ClinicalContextSelector';
 
 interface GeneratedNote {
     id: string;
@@ -39,23 +38,7 @@ export default function NotesPage() {
     // Form state
     const [transcript, setTranscript] = useState('');
     const [patientId, setPatientId] = useState('');
-
-    // Clinical Context state
-    const [clinicalContext, setClinicalContext] = useState<ClinicalContext>({
-        clinic: 'hmhi-downtown',
-        visitType: 'psychiatric-intake',
-        emr: 'epic',
-        generationSettings: {
-            updateHPI: true,
-            generateAssessment: true,
-            addIntervalUpdate: false,
-            updatePlan: true,
-            modifyPsychExam: true,
-            includeEpicSyntax: true,
-            comprehensiveIntake: true,
-            referencePreviousVisits: false,
-        }
-    });
+    const [encounterType, setEncounterType] = useState<'office-visit' | 'telehealth' | 'emergency' | 'consultation' | 'follow-up'>('office-visit');
 
     // Generation state
     const [isGenerating, setIsGenerating] = useState(false);
@@ -69,19 +52,13 @@ export default function NotesPage() {
             return;
         }
 
-        // Validate required fields based on visit type
-        if (clinicalContext.visitType === 'transfer-of-care' && !clinicalContext.previousNote?.trim()) {
-            setGenerationError('Please provide the previous note for transfer of care visits');
-            return;
-        }
-
         setIsGenerating(true);
         setGenerationError(null);
         setGeneratedNote(null);
-        setProcessingSteps([`Starting ${clinicalContext.visitType} note generation for ${clinicalContext.clinic}...`]);
+        setProcessingSteps(['Starting note generation...']);
 
         try {
-            const response = await fetch('/api/clinical-generate', {
+            const response = await fetch('/api/test-generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -91,15 +68,14 @@ export default function NotesPage() {
                         id: `transcript_${Date.now()}`,
                         content: transcript,
                         patientId: patientId || `patient_${Date.now()}`,
-                        encounterType: clinicalContext.visitType,
+                        encounterType: encounterType,
                         timestamp: new Date().toISOString(),
                     },
-                    clinicalContext: clinicalContext,
                     preferences: {
-                        includeSmartPhrases: clinicalContext.generationSettings.includeEpicSyntax,
-                        includeDotPhrases: clinicalContext.generationSettings.includeEpicSyntax,
-                        preserveEpicSyntax: clinicalContext.generationSettings.includeEpicSyntax,
-                        detailLevel: clinicalContext.generationSettings.comprehensiveIntake ? 'detailed' : 'standard'
+                        includeSmartPhrases: true,
+                        includeDotPhrases: true,
+                        preserveEpicSyntax: true,
+                        detailLevel: 'standard'
                     }
                 })
             });
@@ -129,12 +105,6 @@ export default function NotesPage() {
         setGeneratedNote(null);
         setGenerationError(null);
         setProcessingSteps([]);
-        // Reset clinical context to defaults
-        setClinicalContext({
-            ...clinicalContext,
-            previousNote: '',
-            patientHistory: undefined
-        });
     };
 
     const copyToClipboard = async (text: string) => {
@@ -146,42 +116,17 @@ export default function NotesPage() {
         }
     };
 
-    const getContextualPlaceholder = () => {
-        switch (clinicalContext.visitType) {
-            case 'transfer-of-care':
-                return `Enter the patient encounter transcript from today's visit...
-
-Example:
-Patient returns for follow-up. Reports feeling much better since starting sertraline 50mg daily. Sleep has improved, mood is more stable. Denies side effects. Still some anxiety before work meetings but manageable. Wants to continue current medication.`;
-
-            case 'psychiatric-intake':
-                return `Enter the complete psychiatric intake transcript...
-
-Example:
-25-year-old female presents with 6-month history of depressed mood, decreased energy, poor sleep, and anxiety. Reports feeling overwhelmed at work, crying spells daily. No prior psychiatric treatment. Family history of depression in mother. Denies suicidal ideation. Looking for help managing symptoms.`;
-
-            case 'follow-up':
-                return `Enter the follow-up visit transcript...
-
-Example:
-Patient returns for 3-month follow-up. On sertraline 100mg daily and therapy. Reports significant improvement in mood and anxiety. Sleep better, energy improved. Minor side effects - mild nausea initially but resolved. Therapy is helpful. Wants to continue current treatment plan.`;
-
-            default:
-                return 'Enter the patient encounter transcript here...';
-        }
-    };
-
     // Show note generation interface if action=create
     if (action === 'create') {
         return (
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="max-w-6xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">Clinical Note Generation</h1>
+                            <h1 className="text-2xl font-bold text-gray-900">Generate New Clinical Note</h1>
                             <p className="mt-2 text-gray-600">
-                                Context-aware AI note generation for your specific clinical workflow
+                                Enter patient transcript and let AI generate a professional clinical note with Epic SmartPhrases
                             </p>
                         </div>
                         <button
@@ -193,19 +138,13 @@ Patient returns for 3-month follow-up. On sertraline 100mg daily and therapy. Re
                     </div>
                 </div>
 
-                {/* Clinical Context Configuration */}
-                <ClinicalContextSelector
-                    context={clinicalContext}
-                    onContextChange={setClinicalContext}
-                />
-
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Input Form */}
                     <div className="bg-white shadow rounded-lg border border-gray-200">
                         <div className="px-6 py-4 border-b border-gray-200">
-                            <h3 className="text-lg font-medium text-gray-900">Visit Transcript</h3>
+                            <h3 className="text-lg font-medium text-gray-900">Patient Transcript Input</h3>
                             <p className="mt-1 text-sm text-gray-500">
-                                Enter the {clinicalContext.visitType.replace('-', ' ')} transcript for AI processing
+                                Enter the patient encounter transcript for AI note generation
                             </p>
                         </div>
 
@@ -213,7 +152,7 @@ Patient returns for 3-month follow-up. On sertraline 100mg daily and therapy. Re
                             {/* Patient ID */}
                             <div>
                                 <label htmlFor="patientId" className="block text-sm font-medium text-gray-700">
-                                    Patient ID
+                                    Patient ID (Optional)
                                 </label>
                                 <input
                                     type="text"
@@ -225,34 +164,41 @@ Patient returns for 3-month follow-up. On sertraline 100mg daily and therapy. Re
                                 />
                             </div>
 
+                            {/* Encounter Type */}
+                            <div>
+                                <label htmlFor="encounterType" className="block text-sm font-medium text-gray-700">
+                                    Encounter Type
+                                </label>
+                                <select
+                                    id="encounterType"
+                                    value={encounterType}
+                                    onChange={(e) => setEncounterType(e.target.value as any)}
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="office-visit">Office Visit</option>
+                                    <option value="telehealth">Telehealth</option>
+                                    <option value="emergency">Emergency</option>
+                                    <option value="consultation">Consultation</option>
+                                    <option value="follow-up">Follow-up</option>
+                                </select>
+                            </div>
+
                             {/* Transcript Input */}
                             <div>
                                 <label htmlFor="transcript" className="block text-sm font-medium text-gray-700">
-                                    Visit Transcript *
+                                    Patient Transcript *
                                 </label>
                                 <textarea
                                     id="transcript"
-                                    rows={12}
+                                    rows={8}
                                     value={transcript}
                                     onChange={(e) => setTranscript(e.target.value)}
-                                    placeholder={getContextualPlaceholder()}
+                                    placeholder="Enter the patient encounter transcript here...&#10;&#10;Example:&#10;Patient is a 45-year-old male presenting with chest pain that started 2 hours ago. Pain is described as sharp, 7/10 intensity, radiating to left arm. Patient denies shortness of breath but reports mild nausea. No previous cardiac history. Takes no medications."
                                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 resize-vertical"
                                 />
                                 <p className="mt-1 text-sm text-gray-500">
-                                    {transcript.length} characters • {clinicalContext.clinic === 'hmhi-downtown' ? 'Epic EMR' : 'Credible EMR'} format
+                                    {transcript.length} characters
                                 </p>
-                            </div>
-
-                            {/* Context Summary */}
-                            <div className="bg-blue-50 p-3 rounded-lg">
-                                <div className="text-sm">
-                                    <span className="font-medium text-blue-900">AI Configuration: </span>
-                                    <span className="text-blue-700">
-                                        {clinicalContext.clinic === 'hmhi-downtown' ? 'HMHI Downtown' : 'Davis Behavioral Health'} •
-                                        {' '}{clinicalContext.visitType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} •
-                                        {' '}{clinicalContext.generationSettings.includeEpicSyntax ? 'Epic SmartPhrases' : 'Plain Text'}
-                                    </span>
-                                </div>
                             </div>
 
                             {/* Action Buttons */}
@@ -272,7 +218,7 @@ Patient returns for 3-month follow-up. On sertraline 100mg daily and therapy. Re
                                             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                             </svg>
-                                            Generate Clinical Note
+                                            Generate Note
                                         </>
                                     )}
                                 </button>
@@ -293,7 +239,7 @@ Patient returns for 3-month follow-up. On sertraline 100mg daily and therapy. Re
                         <div className="px-6 py-4 border-b border-gray-200">
                             <h3 className="text-lg font-medium text-gray-900">Generated Clinical Note</h3>
                             <p className="mt-1 text-sm text-gray-500">
-                                {clinicalContext.clinic === 'hmhi-downtown' ? 'Epic-ready' : 'Credible-ready'} clinical documentation
+                                AI-generated clinical note with Epic SmartPhrases
                             </p>
                         </div>
 
@@ -303,8 +249,8 @@ Patient returns for 3-month follow-up. On sertraline 100mg daily and therapy. Re
                                     <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
-                                    <h3 className="mt-2 text-sm font-medium text-gray-900">Ready for clinical note generation</h3>
-                                    <p className="mt-1 text-sm text-gray-500">Configure your clinical context and enter transcript to begin</p>
+                                    <h3 className="mt-2 text-sm font-medium text-gray-900">No note generated</h3>
+                                    <p className="mt-1 text-sm text-gray-500">Enter a transcript and click Generate Note to begin</p>
                                 </div>
                             )}
 
@@ -312,7 +258,7 @@ Patient returns for 3-month follow-up. On sertraline 100mg daily and therapy. Re
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-center py-8">
                                         <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
-                                        <span className="ml-2 text-gray-600">AI is generating your {clinicalContext.visitType.replace('-', ' ')} note...</span>
+                                        <span className="ml-2 text-gray-600">AI is generating your clinical note...</span>
                                     </div>
 
                                     {processingSteps.length > 0 && (
@@ -357,7 +303,7 @@ Patient returns for 3-month follow-up. On sertraline 100mg daily and therapy. Re
                                                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                                 </svg>
                                                 <span className="text-sm font-medium text-green-800">
-                                                    {clinicalContext.visitType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} Note Generated
+                                                    Note Generated Successfully
                                                 </span>
                                             </div>
                                             <div className="flex items-center space-x-2 text-sm text-green-700">
@@ -371,9 +317,7 @@ Patient returns for 3-month follow-up. On sertraline 100mg daily and therapy. Re
                                     {/* Generated Note Content */}
                                     <div className="bg-gray-50 rounded-lg p-4">
                                         <div className="flex items-center justify-between mb-2">
-                                            <h4 className="text-sm font-medium text-gray-900">
-                                                {clinicalContext.emr.toUpperCase()} Clinical Note
-                                            </h4>
+                                            <h4 className="text-sm font-medium text-gray-900">Clinical Note Content</h4>
                                             <button
                                                 onClick={() => copyToClipboard(generatedNote.content)}
                                                 className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
@@ -381,7 +325,7 @@ Patient returns for 3-month follow-up. On sertraline 100mg daily and therapy. Re
                                                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                                 </svg>
-                                                Copy to {clinicalContext.emr.toUpperCase()}
+                                                Copy
                                             </button>
                                         </div>
                                         <pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono max-h-96 overflow-y-auto">
@@ -389,8 +333,8 @@ Patient returns for 3-month follow-up. On sertraline 100mg daily and therapy. Re
                                         </pre>
                                     </div>
 
-                                    {/* Epic Syntax Detection (only for HMHI) */}
-                                    {clinicalContext.generationSettings.includeEpicSyntax && (generatedNote.metadata.smartPhrasesDetected.length > 0 || generatedNote.metadata.dotPhrasesDetected.length > 0) && (
+                                    {/* Epic Syntax Detection */}
+                                    {(generatedNote.metadata.smartPhrasesDetected.length > 0 || generatedNote.metadata.dotPhrasesDetected.length > 0) && (
                                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                             <h4 className="text-sm font-medium text-blue-900 mb-2">Epic Syntax Elements Detected</h4>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -434,14 +378,14 @@ Patient returns for 3-month follow-up. On sertraline 100mg daily and therapy. Re
                     <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">Clinical Notes Management</h3>
-                    <p className="mt-1 text-sm text-gray-500">Generate and manage your clinical documentation</p>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Notes Management</h3>
+                    <p className="mt-1 text-sm text-gray-500">View and manage your clinical notes</p>
                     <div className="mt-6">
                         <button
                             onClick={() => router.push('/dashboard/notes?action=create')}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                         >
-                            Generate Clinical Note
+                            Generate New Note
                         </button>
                     </div>
                 </div>

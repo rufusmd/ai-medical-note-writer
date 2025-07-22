@@ -1,4 +1,4 @@
-// src/app/api/generate-note/route.ts - Fixed Version
+// src/app/api/generate-note/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
@@ -10,9 +10,7 @@ import {
     NoteGenerationRequest,
     PatientTranscript,
     NoteTemplate,
-    AIProviderError,
-    PatientContext,
-    NoteGenerationPreferences
+    AIProviderError
 } from '@/lib/ai-providers/types';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, updateDoc, collection, addDoc } from 'firebase/firestore';
@@ -43,139 +41,11 @@ function getProviderManager(): ProviderManager {
     return providerManager;
 }
 
-// Validation helper
-function validateRequestBody(body: any): { isValid: boolean; errors: string[] } {
-    const errors: string[] = [];
-
-    if (!body.transcript) {
-        errors.push('Transcript is required');
-    } else {
-        if (!body.transcript.content || typeof body.transcript.content !== 'string') {
-            errors.push('Transcript content must be a non-empty string');
-        }
-        if (!body.transcript.id) {
-            errors.push('Transcript ID is required');
-        }
-    }
-
-    return {
-        isValid: errors.length === 0,
-        errors
-    };
-}
-
-// Audit logging helper
-async function logNoteGeneration(data: {
-    noteId: string;
-    userId: string;
-    patientId?: string;
-    provider: string;
-    qualityScore: number;
-    processingDuration: number;
-    fallbackUsed: boolean;
-}) {
-    try {
-        await addDoc(collection(db, 'audit_logs'), {
-            ...data,
-            action: 'note_generation',
-            timestamp: new Date(),
-            ipAddress: 'hidden', // For HIPAA compliance
-        });
-    } catch (error) {
-        console.error('Failed to log note generation:', error);
-        // Don't throw - logging failure shouldn't break note generation
-    }
-}
-
-// =============================================================================
-// GET HANDLER - HEALTH CHECK (No Authentication Required)
-// =============================================================================
-
-export async function GET() {
-    try {
-        // Health check - test provider availability without authentication
-        const startTime = Date.now();
-
-        // Check if we have required environment variables
-        const hasGeminiKey = !!process.env.GOOGLE_GEMINI_API_KEY;
-        const hasClaudeKey = !!process.env.ANTHROPIC_API_KEY;
-
-        if (!hasGeminiKey && !hasClaudeKey) {
-            return NextResponse.json({
-                status: 'error',
-                message: 'No AI provider API keys configured',
-                details: {
-                    gemini: hasGeminiKey ? 'configured' : 'missing',
-                    claude: hasClaudeKey ? 'configured' : 'missing'
-                }
-            }, { status: 503 });
-        }
-
-        // Try to initialize provider manager
-        let manager: ProviderManager;
-        try {
-            manager = getProviderManager();
-        } catch (error: any) {
-            return NextResponse.json({
-                status: 'error',
-                message: 'Failed to initialize AI providers',
-                details: error.message
-            }, { status: 503 });
-        }
-
-        // Test provider health
-        const healthResults = await Promise.allSettled([
-            hasGeminiKey ? manager.checkProviderHealth('gemini') : Promise.resolve(false),
-            hasClaudeKey ? manager.checkProviderHealth('claude') : Promise.resolve(false)
-        ]);
-
-        const geminiHealthy = hasGeminiKey && healthResults[0].status === 'fulfilled' && healthResults[0].value;
-        const claudeHealthy = hasClaudeKey && healthResults[1].status === 'fulfilled' && healthResults[1].value;
-
-        const responseTime = Date.now() - startTime;
-
-        return NextResponse.json({
-            status: 'healthy',
-            message: 'AI Medical Note Writer API is operational',
-            providers: {
-                gemini: {
-                    configured: hasGeminiKey,
-                    healthy: geminiHealthy,
-                    status: geminiHealthy ? 'operational' : (hasGeminiKey ? 'error' : 'not_configured')
-                },
-                claude: {
-                    configured: hasClaudeKey,
-                    healthy: claudeHealthy,
-                    status: claudeHealthy ? 'operational' : (hasClaudeKey ? 'error' : 'not_configured')
-                }
-            },
-            config: {
-                primaryProvider: process.env.NEXT_PUBLIC_AI_PROVIDER || 'gemini',
-                fallbackEnabled: process.env.NEXT_PUBLIC_ENABLE_PROVIDER_FALLBACK === 'true'
-            },
-            responseTime,
-            timestamp: new Date().toISOString()
-        });
-
-    } catch (error: any) {
-        console.error('Health check error:', error);
-        return NextResponse.json({
-            status: 'error',
-            message: 'Health check failed',
-            details: error.message
-        }, { status: 503 });
-    }
-}
-
-// =============================================================================
-// POST HANDLER - NOTE GENERATION (Authentication Required)
-// =============================================================================
-
 export async function POST(request: NextRequest) {
     const startTime = Date.now();
 
     try {
-        // Check authentication for note generation
+        // Check authentication
         const session = await getServerSession(authOptions);
         if (!session) {
             return NextResponse.json(
@@ -297,44 +167,147 @@ export async function POST(request: NextRequest) {
             fallbackUsed: result.fallbackUsed,
             performance: {
                 totalDuration: Date.now() - startTime,
-                aiProviderDuration: result.performance.providerDuration,
-                processingSteps: result.performance.processingSteps
+                providerDuration: result.performance.providerDuration,
+                processingSteps: result.performance.processingSteps.length,
             },
-            timestamp: new Date().toISOString()
+            metadata: {
+                timestamp: new Date().toISOString(),
+                provider: generatedNote.aiProvider,
+                qualityScore: generatedNote.metadata.qualityScore,
+                epicSyntaxPreserved: generatedNote.metadata.epicSyntaxPreserved,
+            }
         };
 
-        return NextResponse.json(response);
+        return NextResponse.json(response, { status: 200 });
 
     } catch (error: any) {
-        console.error('Note generation error:', error);
+        console.error('Note generation API error:', error);
 
         const totalDuration = Date.now() - startTime;
 
+        // Handle different types of errors
         if (error instanceof AIProviderError) {
             return NextResponse.json(
                 {
                     error: 'AI Provider Error',
                     message: error.message,
-                    details: {
-                        provider: error.provider,
-                        code: error.code,
-                        totalDuration
-                    }
+                    provider: error.provider,
+                    code: error.code,
+                    performance: { totalDuration }
                 },
-                { status: 503 }
+                { status: 503 } // Service unavailable
             );
         }
 
+        // Generic error response
         return NextResponse.json(
             {
                 error: 'Internal Server Error',
-                message: 'An unexpected error occurred during note generation',
-                details: {
-                    totalDuration,
-                    timestamp: new Date().toISOString()
-                }
+                message: 'An unexpected error occurred while generating the note',
+                performance: { totalDuration }
             },
             { status: 500 }
         );
+    }
+}
+
+export async function GET(request: NextRequest) {
+    try {
+        // Check authentication
+        const session = await getServerSession(authOptions);
+        if (!session) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
+        // Health check endpoint
+        const manager = getProviderManager();
+        const healthStatus = await manager.healthCheck();
+        const usageStats = manager.getUsageStats();
+
+        return NextResponse.json({
+            status: 'operational',
+            providers: healthStatus,
+            usage: usageStats,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('Health check error:', error);
+        return NextResponse.json(
+            {
+                status: 'error',
+                message: 'Health check failed',
+                timestamp: new Date().toISOString()
+            },
+            { status: 503 }
+        );
+    }
+}
+
+// Request validation function
+function validateRequestBody(body: any): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    // Check required fields
+    if (!body.transcript) {
+        errors.push('transcript is required');
+    } else {
+        if (!body.transcript.content || typeof body.transcript.content !== 'string') {
+            errors.push('transcript.content is required and must be a string');
+        }
+        if (!body.transcript.patientId || typeof body.transcript.patientId !== 'string') {
+            errors.push('transcript.patientId is required and must be a string');
+        }
+    }
+
+    // Validate optional fields
+    if (body.templateId && typeof body.templateId !== 'string') {
+        errors.push('templateId must be a string');
+    }
+
+    if (body.patientContext && typeof body.patientContext !== 'object') {
+        errors.push('patientContext must be an object');
+    }
+
+    if (body.preferences) {
+        if (typeof body.preferences !== 'object') {
+            errors.push('preferences must be an object');
+        } else {
+            // Validate preferences structure
+            const validDetailLevels = ['concise', 'standard', 'detailed'];
+            if (body.preferences.detailLevel && !validDetailLevels.includes(body.preferences.detailLevel)) {
+                errors.push('preferences.detailLevel must be one of: concise, standard, detailed');
+            }
+        }
+    }
+
+    return {
+        isValid: errors.length === 0,
+        errors
+    };
+}
+
+// Logging function for analytics
+async function logNoteGeneration(logData: {
+    noteId: string;
+    userId: string;
+    patientId: string;
+    provider: 'gemini' | 'claude';
+    qualityScore: number;
+    processingDuration: number;
+    fallbackUsed: boolean;
+}) {
+    try {
+        await addDoc(collection(db, 'note_generation_logs'), {
+            ...logData,
+            timestamp: new Date(),
+            month: new Date().toISOString().substring(0, 7), // For monthly aggregations
+        });
+    } catch (error) {
+        console.error('Failed to log note generation:', error);
+        // Don't fail the request if logging fails
     }
 }
