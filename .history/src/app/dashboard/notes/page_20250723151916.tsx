@@ -182,8 +182,7 @@ export default function NotesPage() {
 
             setProcessingSteps(prev => [...prev, 'Sending request to AI provider...']);
 
-            // TEMPORARY: Use test endpoint for development (bypasses auth)
-            const response = await fetch('/api/test-generate', {
+            const response = await fetch('/api/generate-note', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
