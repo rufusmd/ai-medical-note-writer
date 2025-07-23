@@ -1,16 +1,10 @@
-// src/app/dashboard/page.tsx - TEMPORARY FIX
-
-'use client';
+// src/app/dashboard/page.tsx - Fixed Version
 
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import QuickActions from '@/components/dashboard/QuickActions';
 import RecentActivity from '@/components/dashboard/RecentActivity';
-import SimpleFeedbackAnalytics from '@/components/feedback/SimpleFeedbackAnalytics'; // 🚫 TEMPORARILY COMMENTED OUT
-import { useAuth } from '@/contexts/AuthContext';
 
 export default function DashboardPage() {
-    const { user } = useAuth();
-
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -20,18 +14,9 @@ export default function DashboardPage() {
                 </h1>
                 <p className="mt-2 text-gray-600">
                     Here's an overview of your medical note generation activity.
-                    <span className="font-medium text-blue-600 ml-1">
-                        🧠 AI Learning System Active!
-                    </span>
+                    <span className="font-medium text-blue-600 ml-1">Phase 3 Integration Active!</span>
                 </p>
             </div>
-
-            {user && (
-                <SimpleFeedbackAnalytics
-                    userId={user.uid}
-                    className="mb-6"
-                />
-            )}
 
             {/* Dashboard Statistics */}
             <DashboardStats />
@@ -45,10 +30,10 @@ export default function DashboardPage() {
                 <RecentActivity />
             </div>
 
-            {/* Enhanced System Status */}
+            {/* System Status */}
             <div className="bg-white shadow rounded-lg p-6 border border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">System Status</h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex items-center">
                         <div className="h-2 w-2 bg-green-500 rounded-full mr-2"></div>
                         <span className="text-sm text-gray-600">Server Running</span>
@@ -59,16 +44,11 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex items-center">
                         <div className="h-2 w-2 bg-blue-500 rounded-full mr-2"></div>
-                        <span className="text-sm text-gray-600">Enhanced API Active</span>
-                    </div>
-                    <div className="flex items-center">
-                        <div className="h-2 w-2 bg-purple-500 rounded-full mr-2"></div>
-                        <span className="text-sm text-gray-600">Learning System Ready</span>
+                        <span className="text-sm text-gray-600">Phase 3 Active</span>
                     </div>
                 </div>
                 <div className="mt-4 text-xs text-gray-500">
-                    🚀 Phase 1 Implementation: AI Feedback & Learning System Active.
-                    Generate notes and provide feedback to see the learning analytics in action!
+                    Ready for AI integration testing. Configure your .env.local file to enable live AI providers.
                 </div>
             </div>
         </div>

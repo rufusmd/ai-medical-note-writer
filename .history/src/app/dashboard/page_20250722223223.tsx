@@ -1,15 +1,15 @@
-// src/app/dashboard/page.tsx - TEMPORARY FIX
+// src/app/dashboard/page.tsx - REPLACE YOUR EXISTING FILE
 
-'use client';
+'use client'; // 🆕 NEW: Make this a client component
 
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import QuickActions from '@/components/dashboard/QuickActions';
 import RecentActivity from '@/components/dashboard/RecentActivity';
-import SimpleFeedbackAnalytics from '@/components/feedback/SimpleFeedbackAnalytics'; // 🚫 TEMPORARILY COMMENTED OUT
-import { useAuth } from '@/contexts/AuthContext';
+import SimpleFeedbackAnalytics from '@/components/feedback/SimpleFeedbackAnalytics'; // 🆕 NEW
+import { useAuth } from '@/contexts/AuthContext'; // 🆕 NEW
 
 export default function DashboardPage() {
-    const { user } = useAuth();
+    const { user } = useAuth(); // 🆕 NEW: Get current user for analytics
 
     return (
         <div className="space-y-6">
@@ -26,6 +26,7 @@ export default function DashboardPage() {
                 </p>
             </div>
 
+            {/* 🆕 NEW: AI Learning Analytics */}
             {user && (
                 <SimpleFeedbackAnalytics
                     userId={user.uid}

@@ -26,12 +26,13 @@ export default function DashboardPage() {
                 </p>
             </div>
 
-            {user && (
-                <SimpleFeedbackAnalytics
-                    userId={user.uid}
-                    className="mb-6"
+            {/* 🚫 TEMPORARILY COMMENTED OUT */}
+            {/* {user && (
+                <SimpleFeedbackAnalytics 
+                    userId={user.uid} 
+                    className="mb-6" 
                 />
-            )}
+            )} */}
 
             {/* Dashboard Statistics */}
             <DashboardStats />

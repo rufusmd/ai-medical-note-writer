@@ -5,7 +5,7 @@
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import QuickActions from '@/components/dashboard/QuickActions';
 import RecentActivity from '@/components/dashboard/RecentActivity';
-import SimpleFeedbackAnalytics from '@/components/feedback/SimpleFeedbackAnalytics'; // 🚫 TEMPORARILY COMMENTED OUT
+// import SimpleFeedbackAnalytics from '@/components/feedback/SimpleFeedbackAnalytics'; // 🚫 TEMPORARILY COMMENTED OUT
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function DashboardPage() {
@@ -26,12 +26,13 @@ export default function DashboardPage() {
                 </p>
             </div>
 
-            {user && (
-                <SimpleFeedbackAnalytics
-                    userId={user.uid}
-                    className="mb-6"
+            {/* 🚫 TEMPORARILY COMMENTED OUT */}
+            {/* {user && (
+                <SimpleFeedbackAnalytics 
+                    userId={user.uid} 
+                    className="mb-6" 
                 />
-            )}
+            )} */}
 
             {/* Dashboard Statistics */}
             <DashboardStats />
