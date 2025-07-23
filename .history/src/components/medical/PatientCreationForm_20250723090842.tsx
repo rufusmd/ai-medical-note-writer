@@ -145,13 +145,18 @@ export default function PatientCreationForm({ onPatientCreated, onCancel }: Pati
         try {
             const now = Timestamp.now();
 
-            // Create patient object for Firestore - filter out undefined values
-            const patientData: any = {
+            // Create patient object for Firestore
+            const patientData = {
                 userId: user.uid,
                 name: formData.name.trim(),
+                mrn: formData.mrn?.toUpperCase() || undefined,
+                dob: formData.dob || undefined,
                 gender: formData.gender,
+                primaryDiagnosis: formData.primaryDiagnosis || undefined,
                 allergies: formData.allergies,
                 currentMedications: formData.currentMedications,
+                phoneNumber: formData.phoneNumber || undefined,
+                emergencyContact: formData.emergencyContact.name ? formData.emergencyContact : undefined,
                 primaryClinic: formData.primaryClinic,
                 preferredEMR: formData.preferredEMR,
                 status: 'active' as const,
@@ -161,23 +166,6 @@ export default function PatientCreationForm({ onPatientCreated, onCancel }: Pati
                 updatedAt: now,
                 lastModified: now
             };
-
-            // Only add optional fields if they have values
-            if (formData.mrn?.trim()) {
-                patientData.mrn = formData.mrn.toUpperCase();
-            }
-            if (formData.dob) {
-                patientData.dob = formData.dob;
-            }
-            if (formData.primaryDiagnosis?.trim()) {
-                patientData.primaryDiagnosis = formData.primaryDiagnosis;
-            }
-            if (formData.phoneNumber?.trim()) {
-                patientData.phoneNumber = formData.phoneNumber;
-            }
-            if (formData.emergencyContact.name?.trim()) {
-                patientData.emergencyContact = formData.emergencyContact;
-            }
 
             // Add to Firestore
             const docRef = await addDoc(collection(db, 'patients'), patientData);
@@ -482,18 +470,18 @@ export default function PatientCreationForm({ onPatientCreated, onCancel }: Pati
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex justify-end gap-4 pt-8 pb-8 border-t border-gray-200 mt-8">
+                <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="px-8 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                        className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isSubmitting ? 'Creating Patient...' : 'Create Patient'}
                     </button>

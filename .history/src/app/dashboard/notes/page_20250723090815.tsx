@@ -225,23 +225,6 @@ export default function NotesPage() {
         }
     };
 
-    // Copy note to clipboard
-    const handleCopyNote = async () => {
-        if (!generatedNote?.content) return;
-
-        try {
-            await navigator.clipboard.writeText(generatedNote.content);
-            toast.success('Note copied to clipboard!', {
-                description: 'The clinical note has been copied and is ready to paste.'
-            });
-        } catch (error) {
-            console.error('Failed to copy note:', error);
-            toast.error('Failed to copy note', {
-                description: 'Please try selecting and copying the text manually.'
-            });
-        }
-    };
-
     const handleFeedbackSubmitted = () => {
         setShowFeedbackForm(false);
         toast.success('Feedback submitted!', {
@@ -505,11 +488,7 @@ export default function NotesPage() {
                                                     <span className="text-indigo-100 text-sm">
                                                         {generatedNote.provider} • {generatedNote.processingTime}ms
                                                     </span>
-                                                    <button
-                                                        onClick={handleCopyNote}
-                                                        className="text-indigo-100 hover:text-white transition-colors p-1 rounded"
-                                                        title="Copy note to clipboard"
-                                                    >
+                                                    <button className="text-indigo-100 hover:text-white transition-colors">
                                                         <DocumentDuplicateIcon className="h-5 w-5" />
                                                     </button>
                                                 </div>
@@ -566,7 +545,7 @@ export default function NotesPage() {
                     {/* Add Patient Modal */}
                     {showAddPatientModal && (
                         <div className="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-                            <div className="relative top-8 mx-auto p-8 pb-12 border w-11/12 max-w-6xl shadow-2xl rounded-2xl bg-white min-h-[600px] mb-8">
+                            <div className="relative top-8 mx-auto p-8 border w-11/12 max-w-6xl shadow-2xl rounded-2xl bg-white min-h-[600px]">
                                 <div className="flex items-center justify-between mb-6">
                                     <h3 className="text-2xl font-bold text-gray-900">Add New Patient</h3>
                                     <button

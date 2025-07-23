@@ -1,4 +1,4 @@
-// src/app/dashboard/notes/page.tsx - Updated with Real Firebase Patient Data
+// src/app/dashboard/notes/page.tsx - COMPLETE FILE WITH STACKED LAYOUT
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -7,9 +7,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import ClinicalContextSelector, { ClinicalContext } from '@/components/clinical/ClinicalContextSelector';
 import NoteFeedbackForm from '@/components/feedback/NoteFeedbackForm';
-import PatientCreationForm from '@/components/medical/PatientCreationForm';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
 import {
     UserIcon,
     DocumentTextIcon,
@@ -22,35 +19,22 @@ import {
     ExclamationTriangleIcon,
     ChartBarIcon,
     DocumentDuplicateIcon,
-    CloudArrowDownIcon,
-    XMarkIcon
+    CloudArrowDownIcon
 } from '@heroicons/react/24/outline';
 
-// Patient interface that matches Firebase
-interface Patient {
+// Enhanced Patient interface
+interface EnhancedPatient {
     id: string;
-    userId: string;
     name: string;
     mrn?: string;
     dob?: string;
-    gender?: 'male' | 'female' | 'other' | 'prefer-not-to-say';
-    primaryDiagnosis?: string;
-    allergies?: string[];
-    currentMedications?: string[];
-    phoneNumber?: string;
-    emergencyContact?: {
-        name: string;
-        relationship: string;
-        phoneNumber: string;
-    };
-    primaryClinic: 'hmhi-downtown' | 'dbh' | 'other';
-    preferredEMR: 'epic' | 'credible' | 'other';
+    clinic: 'hmhi-downtown' | 'dbh' | 'other';
     status: 'active' | 'inactive' | 'transferred';
-    isActive: boolean;
-    noteCount: number;
-    createdAt: any;
-    updatedAt: any;
-    lastModified: any;
+    lastVisitDate?: Date;
+    noteCount?: number;
+    averageNoteQuality?: number;
+    diagnosis?: string[];
+    currentMedications?: string[];
 }
 
 export default function NotesPage() {
@@ -70,14 +54,8 @@ export default function NotesPage() {
 
     // Form state
     const [transcript, setTranscript] = useState('');
-    const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+    const [selectedPatient, setSelectedPatient] = useState<EnhancedPatient | null>(null);
     const [showPatientSearch, setShowPatientSearch] = useState(false);
-    const [showAddPatientModal, setShowAddPatientModal] = useState(false);
-
-    // Patient data from Firebase
-    const [patients, setPatients] = useState<Patient[]>([]);
-    const [patientsLoading, setPatientsLoading] = useState(true);
-    const [patientsError, setPatientsError] = useState<string | null>(null);
 
     // Clinical context with intelligent defaults
     const [clinicalContext, setClinicalContext] = useState<ClinicalContext>({
@@ -96,61 +74,64 @@ export default function NotesPage() {
         }
     });
 
-    // Load patients from Firebase
-    useEffect(() => {
-        if (!user?.uid) {
-            setPatientsLoading(false);
-            return;
+    // Mock patients data
+    const mockPatients: EnhancedPatient[] = [
+        {
+            id: 'pat-001',
+            name: 'Sarah Johnson',
+            mrn: 'MRN-123456',
+            dob: '1985-03-15',
+            clinic: 'hmhi-downtown',
+            status: 'active',
+            lastVisitDate: new Date('2024-01-15'),
+            noteCount: 8,
+            averageNoteQuality: 8.5,
+            diagnosis: ['Major Depressive Disorder', 'Generalized Anxiety Disorder'],
+            currentMedications: ['Sertraline 100mg', 'Lorazepam 0.5mg PRN']
+        },
+        {
+            id: 'pat-002',
+            name: 'Michael Chen',
+            mrn: 'MRN-789012',
+            dob: '1992-07-22',
+            clinic: 'dbh',
+            status: 'active',
+            lastVisitDate: new Date('2024-01-10'),
+            noteCount: 12,
+            averageNoteQuality: 9.2,
+            diagnosis: ['Bipolar I Disorder', 'ADHD'],
+            currentMedications: ['Lithium 900mg', 'Adderall XR 20mg']
+        },
+        {
+            id: 'pat-003',
+            name: 'Emily Rodriguez',
+            mrn: 'MRN-345678',
+            dob: '1978-11-08',
+            clinic: 'hmhi-downtown',
+            status: 'active',
+            lastVisitDate: new Date('2024-01-12'),
+            noteCount: 15,
+            averageNoteQuality: 8.8,
+            diagnosis: ['PTSD', 'Substance Use Disorder in Remission'],
+            currentMedications: ['Prazosin 2mg', 'Zoloft 150mg']
         }
-
-        console.log('🔄 Loading patients for user:', user.uid);
-
-        // Create real-time query for user's patients
-        const patientsQuery = query(
-            collection(db, 'patients'),
-            where('userId', '==', user.uid),
-            where('isActive', '==', true),
-            orderBy('lastModified', 'desc')
-        );
-
-        const unsubscribe = onSnapshot(
-            patientsQuery,
-            (snapshot) => {
-                const patientData = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as Patient[];
-
-                console.log('✅ Loaded patients:', patientData.length);
-                setPatients(patientData);
-                setPatientsLoading(false);
-                setPatientsError(null);
-            },
-            (error) => {
-                console.error('❌ Error loading patients:', error);
-                setPatientsError('Failed to load patients');
-                setPatientsLoading(false);
-            }
-        );
-
-        return () => unsubscribe();
-    }, [user?.uid]);
+    ];
 
     // Auto-select patient based on URL parameter
     useEffect(() => {
-        if (preselectedPatientId && patients.length > 0) {
-            const patient = patients.find(p => p.id === preselectedPatientId);
+        if (preselectedPatientId && mockPatients.length > 0) {
+            const patient = mockPatients.find(p => p.id === preselectedPatientId);
             if (patient) {
                 setSelectedPatient(patient);
                 // Auto-configure clinical context based on patient's clinic
                 setClinicalContext(prev => ({
                     ...prev,
-                    clinic: patient.primaryClinic === 'dbh' ? 'dbh' : 'hmhi-downtown',
-                    emr: patient.preferredEMR === 'credible' ? 'credible' : 'epic'
+                    clinic: patient.clinic === 'dbh' ? 'dbh' : 'hmhi-downtown',
+                    emr: patient.clinic === 'dbh' ? 'credible' : 'epic'
                 }));
             }
         }
-    }, [preselectedPatientId, patients]);
+    }, [preselectedPatientId, mockPatients]);
 
     // Enhanced note generation with clinical context
     const handleGenerateNote = async () => {
@@ -161,11 +142,6 @@ export default function NotesPage() {
 
         if (!transcript.trim()) {
             toast.error('Please enter a clinical transcript');
-            return;
-        }
-
-        if (!selectedPatient) {
-            toast.error('Please select a patient');
             return;
         }
 
@@ -184,10 +160,10 @@ export default function NotesPage() {
                 },
                 body: JSON.stringify({
                     transcript,
-                    patientId: selectedPatient.id,
-                    patientName: selectedPatient.name,
+                    patientId: selectedPatient?.id || 'temp-patient-id',
+                    patientName: selectedPatient?.name || 'Unnamed Patient',
                     templateId: clinicalContext.visitType,
-                    clinicalContext,
+                    clinicalContext, // Include the full clinical context
                     encounterType: clinicalContext.visitType,
                     specialty: 'psychiatry',
                     userId: user.uid,
@@ -225,23 +201,6 @@ export default function NotesPage() {
         }
     };
 
-    // Copy note to clipboard
-    const handleCopyNote = async () => {
-        if (!generatedNote?.content) return;
-
-        try {
-            await navigator.clipboard.writeText(generatedNote.content);
-            toast.success('Note copied to clipboard!', {
-                description: 'The clinical note has been copied and is ready to paste.'
-            });
-        } catch (error) {
-            console.error('Failed to copy note:', error);
-            toast.error('Failed to copy note', {
-                description: 'Please try selecting and copying the text manually.'
-            });
-        }
-    };
-
     const handleFeedbackSubmitted = () => {
         setShowFeedbackForm(false);
         toast.success('Feedback submitted!', {
@@ -249,40 +208,17 @@ export default function NotesPage() {
         });
     };
 
-    const handlePatientCreated = (newPatient: Patient) => {
-        // Patient will be automatically added via Firebase real-time listener
-        setShowAddPatientModal(false);
-        setSelectedPatient(newPatient);
-
-        // Auto-configure clinical context based on new patient's clinic
-        setClinicalContext(prev => ({
-            ...prev,
-            clinic: newPatient.primaryClinic === 'dbh' ? 'dbh' : 'hmhi-downtown',
-            emr: newPatient.preferredEMR === 'credible' ? 'credible' : 'epic'
-        }));
-
-        toast.success('Patient created successfully!', {
-            description: `${newPatient.name} has been added to your patient list.`
-        });
-    };
-
     // Helper function to format last visit date
-    const formatLastVisit = (date?: any) => {
+    const formatLastVisit = (date?: Date) => {
         if (!date) return 'No visits';
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - date.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        try {
-            const visitDate = date.toDate ? date.toDate() : new Date(date);
-            const now = new Date();
-            const diffTime = Math.abs(now.getTime() - visitDate.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays === 1) return 'Yesterday';
-            if (diffDays < 7) return `${diffDays} days ago`;
-            if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-            return `${Math.floor(diffDays / 30)} months ago`;
-        } catch {
-            return 'Unknown';
-        }
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays < 7) return `${diffDays} days ago`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+        return `${Math.floor(diffDays / 30)} months ago`;
     };
 
     // Render create mode with gorgeous stacked layout
@@ -331,71 +267,32 @@ export default function NotesPage() {
                                     <div className="p-6">
                                         {!selectedPatient ? (
                                             <div className="space-y-4">
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => setShowPatientSearch(!showPatientSearch)}
-                                                        className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl"
-                                                    >
-                                                        <UserIcon className="w-5 h-5" />
-                                                        Select Patient
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setShowAddPatientModal(true)}
-                                                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl"
-                                                        title="Add New Patient"
-                                                    >
-                                                        <PlusIcon className="w-5 h-5" />
-                                                    </button>
-                                                </div>
+                                                <button
+                                                    onClick={() => setShowPatientSearch(!showPatientSearch)}
+                                                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl"
+                                                >
+                                                    <UserIcon className="w-5 h-5" />
+                                                    Select Patient
+                                                </button>
 
                                                 {showPatientSearch && (
                                                     <div className="space-y-3 border-t pt-4">
-                                                        <h4 className="font-medium text-gray-900 mb-3">Your Patients</h4>
-
-                                                        {patientsLoading ? (
-                                                            <div className="text-center py-4">
-                                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-                                                                <p className="text-sm text-gray-500 mt-2">Loading patients...</p>
-                                                            </div>
-                                                        ) : patientsError ? (
-                                                            <div className="text-center py-4">
-                                                                <p className="text-red-600 text-sm">{patientsError}</p>
-                                                            </div>
-                                                        ) : patients.length === 0 ? (
-                                                            <div className="text-center py-4">
-                                                                <p className="text-gray-500 text-sm mb-2">No patients found</p>
+                                                        <h4 className="font-medium text-gray-900 mb-3">Available Patients</h4>
+                                                        <div className="max-h-64 overflow-y-auto space-y-2">
+                                                            {mockPatients.map((patient) => (
                                                                 <button
-                                                                    onClick={() => setShowAddPatientModal(true)}
-                                                                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                                                                    key={patient.id}
+                                                                    onClick={() => {
+                                                                        setSelectedPatient(patient);
+                                                                        setShowPatientSearch(false);
+                                                                    }}
+                                                                    className="w-full text-left p-3 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-all"
                                                                 >
-                                                                    Add your first patient
+                                                                    <div className="font-medium text-gray-900">{patient.name}</div>
+                                                                    <div className="text-sm text-gray-500">MRN: {patient.mrn}</div>
                                                                 </button>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="max-h-64 overflow-y-auto space-y-2">
-                                                                {patients.map((patient) => (
-                                                                    <button
-                                                                        key={patient.id}
-                                                                        onClick={() => {
-                                                                            setSelectedPatient(patient);
-                                                                            setShowPatientSearch(false);
-                                                                        }}
-                                                                        className="w-full text-left p-3 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-all"
-                                                                    >
-                                                                        <div className="font-medium text-gray-900">{patient.name}</div>
-                                                                        <div className="text-sm text-gray-500">
-                                                                            {patient.mrn && `MRN: ${patient.mrn} • `}
-                                                                            {patient.primaryClinic === 'hmhi-downtown' ? 'HMHI Downtown' :
-                                                                                patient.primaryClinic === 'dbh' ? 'Davis Behavioral Health' :
-                                                                                    'Other Clinic'}
-                                                                        </div>
-                                                                        {patient.primaryDiagnosis && (
-                                                                            <div className="text-xs text-gray-400 mt-1">{patient.primaryDiagnosis}</div>
-                                                                        )}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        )}
+                                                            ))}
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -404,23 +301,14 @@ export default function NotesPage() {
                                                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                                                     <div className="flex items-center justify-between mb-2">
                                                         <span className="font-semibold text-green-900">{selectedPatient.name}</span>
-                                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${selectedPatient.status === 'active' ? 'bg-green-100 text-green-800' :
-                                                                'bg-gray-100 text-gray-800'
-                                                            }`}>
+                                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${selectedPatient.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                                                             {selectedPatient.status}
                                                         </span>
                                                     </div>
                                                     <div className="text-sm text-green-700 space-y-1">
-                                                        {selectedPatient.mrn && <div>MRN: {selectedPatient.mrn}</div>}
-                                                        {selectedPatient.dob && <div>DOB: {selectedPatient.dob}</div>}
-                                                        <div>
-                                                            Clinic: {selectedPatient.primaryClinic === 'hmhi-downtown' ? 'HMHI Downtown' :
-                                                                selectedPatient.primaryClinic === 'dbh' ? 'Davis Behavioral Health' :
-                                                                    'Other Clinic'}
-                                                        </div>
-                                                        {selectedPatient.primaryDiagnosis && (
-                                                            <div>Diagnosis: {selectedPatient.primaryDiagnosis}</div>
-                                                        )}
+                                                        <div>MRN: {selectedPatient.mrn}</div>
+                                                        <div>DOB: {selectedPatient.dob}</div>
+                                                        <div>Clinic: {selectedPatient.clinic === 'hmhi-downtown' ? 'HMHI Downtown' : 'Davis Behavioral Health'}</div>
                                                     </div>
                                                     <button
                                                         onClick={() => setSelectedPatient(null)}
@@ -505,11 +393,7 @@ export default function NotesPage() {
                                                     <span className="text-indigo-100 text-sm">
                                                         {generatedNote.provider} • {generatedNote.processingTime}ms
                                                     </span>
-                                                    <button
-                                                        onClick={handleCopyNote}
-                                                        className="text-indigo-100 hover:text-white transition-colors p-1 rounded"
-                                                        title="Copy note to clipboard"
-                                                    >
+                                                    <button className="text-indigo-100 hover:text-white transition-colors">
                                                         <DocumentDuplicateIcon className="h-5 w-5" />
                                                     </button>
                                                 </div>
@@ -562,27 +446,6 @@ export default function NotesPage() {
                             </div>
                         </div>
                     </div>
-
-                    {/* Add Patient Modal */}
-                    {showAddPatientModal && (
-                        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-                            <div className="relative top-8 mx-auto p-8 pb-12 border w-11/12 max-w-6xl shadow-2xl rounded-2xl bg-white min-h-[600px] mb-8">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h3 className="text-2xl font-bold text-gray-900">Add New Patient</h3>
-                                    <button
-                                        onClick={() => setShowAddPatientModal(false)}
-                                        className="text-gray-400 hover:text-gray-600 p-2"
-                                    >
-                                        <XMarkIcon className="w-6 h-6" />
-                                    </button>
-                                </div>
-                                <PatientCreationForm
-                                    onPatientCreated={handlePatientCreated}
-                                    onCancel={() => setShowAddPatientModal(false)}
-                                />
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
         );

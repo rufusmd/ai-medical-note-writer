@@ -1,4 +1,4 @@
-// src/components/clinical/ClinicalContextSelector.tsx - Full-Width Stacked Layout
+// src/components/clinical/ClinicalContextSelector.tsx - Optimized Spacing Version
 'use client';
 
 import { useState } from 'react';
@@ -128,16 +128,16 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
             </div>
 
             <div className="p-10 space-y-12">
-                {/* Primary Configuration - Horizontal Layout */}
-                <div className="space-y-10">
-                    {/* Clinical Setting */}
-                    <div>
-                        <label className="block text-xl font-semibold text-gray-900 mb-8 flex items-center">
-                            <span className="text-3xl mr-4">🏥</span>
+                {/* Primary Configuration - Optimized Layout */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
+                    {/* Clinic Selection */}
+                    <div className="space-y-6">
+                        <label className="block text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                            <span className="text-2xl mr-4">🏥</span>
                             Clinical Setting
                         </label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <label className={`flex items-start p-8 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${context.clinic === 'hmhi-downtown'
+                        <div className="space-y-6">
+                            <label className={`flex items-start p-7 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${context.clinic === 'hmhi-downtown'
                                 ? 'border-blue-500 bg-blue-50 shadow-md'
                                 : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
                                 }`}>
@@ -147,16 +147,16 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
                                     value="hmhi-downtown"
                                     checked={context.clinic === 'hmhi-downtown'}
                                     onChange={(e) => handlePresetSelection(e.target.value as ClinicalContext['clinic'], context.visitType)}
-                                    className="h-6 w-6 text-blue-600 focus:ring-blue-500 mt-2"
+                                    className="h-5 w-5 text-blue-600 focus:ring-blue-500 mt-1.5"
                                 />
-                                <div className="ml-6 flex-1">
-                                    <div className="font-semibold text-gray-900 text-xl mb-3">HMHI Downtown</div>
-                                    <div className="text-base text-gray-600 leading-relaxed">
-                                        Epic EMR • SmartPhrases enabled • Advanced workflow integration
+                                <div className="ml-5 flex-1">
+                                    <div className="font-semibold text-gray-900 text-lg mb-2">HMHI Downtown</div>
+                                    <div className="text-sm text-gray-600 leading-relaxed">
+                                        Epic EMR • SmartPhrases enabled
                                     </div>
                                 </div>
                             </label>
-                            <label className={`flex items-start p-8 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${context.clinic === 'dbh'
+                            <label className={`flex items-start p-7 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${context.clinic === 'dbh'
                                 ? 'border-green-500 bg-green-50 shadow-md'
                                 : 'border-gray-200 hover:border-green-300 hover:bg-gray-50'
                                 }`}>
@@ -166,26 +166,26 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
                                     value="dbh"
                                     checked={context.clinic === 'dbh'}
                                     onChange={(e) => handlePresetSelection(e.target.value as ClinicalContext['clinic'], context.visitType)}
-                                    className="h-6 w-6 text-green-600 focus:ring-green-500 mt-2"
+                                    className="h-5 w-5 text-green-600 focus:ring-green-500 mt-1.5"
                                 />
-                                <div className="ml-6 flex-1">
-                                    <div className="font-semibold text-gray-900 text-xl mb-3">Davis Behavioral Health</div>
-                                    <div className="text-base text-gray-600 leading-relaxed">
-                                        Credible EMR • Plain text format • Streamlined documentation
+                                <div className="ml-5 flex-1">
+                                    <div className="font-semibold text-gray-900 text-lg mb-2">Davis Behavioral Health</div>
+                                    <div className="text-sm text-gray-600 leading-relaxed">
+                                        Credible EMR • Plain text format
                                     </div>
                                 </div>
                             </label>
                         </div>
                     </div>
 
-                    {/* Visit Type */}
-                    <div>
-                        <label className="block text-xl font-semibold text-gray-900 mb-8 flex items-center">
-                            <span className="text-3xl mr-4">📋</span>
+                    {/* Visit Type Selection */}
+                    <div className="space-y-6">
+                        <label className="block text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                            <span className="text-2xl mr-4">📋</span>
                             Visit Type
                         </label>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <label className={`flex items-start p-8 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${context.visitType === 'transfer-of-care'
+                        <div className="space-y-6">
+                            <label className={`flex items-start p-7 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${context.visitType === 'transfer-of-care'
                                 ? 'border-purple-500 bg-purple-50 shadow-md'
                                 : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
                                 }`}>
@@ -195,16 +195,16 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
                                     value="transfer-of-care"
                                     checked={context.visitType === 'transfer-of-care'}
                                     onChange={(e) => handlePresetSelection(context.clinic, e.target.value as ClinicalContext['visitType'])}
-                                    className="h-6 w-6 text-purple-600 focus:ring-purple-500 mt-2"
+                                    className="h-5 w-5 text-purple-600 focus:ring-purple-500 mt-1.5"
                                 />
-                                <div className="ml-6 flex-1">
-                                    <div className="font-semibold text-gray-900 text-xl mb-3">Transfer of Care</div>
-                                    <div className="text-base text-gray-600 leading-relaxed">
+                                <div className="ml-5 flex-1">
+                                    <div className="font-semibold text-gray-900 text-lg mb-2">Transfer of Care</div>
+                                    <div className="text-sm text-gray-600 leading-relaxed">
                                         Taking over from resident or colleague
                                     </div>
                                 </div>
                             </label>
-                            <label className={`flex items-start p-8 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${context.visitType === 'psychiatric-intake'
+                            <label className={`flex items-start p-7 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${context.visitType === 'psychiatric-intake'
                                 ? 'border-purple-500 bg-purple-50 shadow-md'
                                 : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
                                 }`}>
@@ -214,16 +214,16 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
                                     value="psychiatric-intake"
                                     checked={context.visitType === 'psychiatric-intake'}
                                     onChange={(e) => handlePresetSelection(context.clinic, e.target.value as ClinicalContext['visitType'])}
-                                    className="h-6 w-6 text-purple-600 focus:ring-purple-500 mt-2"
+                                    className="h-5 w-5 text-purple-600 focus:ring-purple-500 mt-1.5"
                                 />
-                                <div className="ml-6 flex-1">
-                                    <div className="font-semibold text-gray-900 text-xl mb-3">Psychiatric Intake</div>
-                                    <div className="text-base text-gray-600 leading-relaxed">
+                                <div className="ml-5 flex-1">
+                                    <div className="font-semibold text-gray-900 text-lg mb-2">Psychiatric Intake</div>
+                                    <div className="text-sm text-gray-600 leading-relaxed">
                                         Comprehensive new patient evaluation
                                     </div>
                                 </div>
                             </label>
-                            <label className={`flex items-start p-8 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${context.visitType === 'follow-up'
+                            <label className={`flex items-start p-7 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${context.visitType === 'follow-up'
                                 ? 'border-purple-500 bg-purple-50 shadow-md'
                                 : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
                                 }`}>
@@ -233,11 +233,11 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
                                     value="follow-up"
                                     checked={context.visitType === 'follow-up'}
                                     onChange={(e) => handlePresetSelection(context.clinic, e.target.value as ClinicalContext['visitType'])}
-                                    className="h-6 w-6 text-purple-600 focus:ring-purple-500 mt-2"
+                                    className="h-5 w-5 text-purple-600 focus:ring-purple-500 mt-1.5"
                                 />
-                                <div className="ml-6 flex-1">
-                                    <div className="font-semibold text-gray-900 text-xl mb-3">Follow-up Visit</div>
-                                    <div className="text-base text-gray-600 leading-relaxed">
+                                <div className="ml-5 flex-1">
+                                    <div className="font-semibold text-gray-900 text-lg mb-2">Follow-up Visit</div>
+                                    <div className="text-sm text-gray-600 leading-relaxed">
                                         Routine follow-up or medication check
                                     </div>
                                 </div>
@@ -246,27 +246,27 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
                     </div>
 
                     {/* EMR System Display */}
-                    <div>
-                        <label className="block text-xl font-semibold text-gray-900 mb-8 flex items-center">
-                            <span className="text-3xl mr-4">💻</span>
-                            EMR System Configuration
+                    <div className="space-y-6">
+                        <label className="block text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                            <span className="text-2xl mr-4">💻</span>
+                            EMR System
                         </label>
-                        <div className="max-w-2xl">
-                            <div className={`p-8 border-2 rounded-xl ${context.emr === 'epic'
+                        <div className="space-y-6">
+                            <div className={`p-7 border-2 rounded-xl ${context.emr === 'epic'
                                 ? 'border-blue-400 bg-blue-50'
                                 : 'border-green-400 bg-green-50'
                                 }`}>
-                                <div className="flex items-center mb-4">
-                                    <div className={`w-5 h-5 rounded-full mr-5 ${context.emr === 'epic' ? 'bg-blue-500' : 'bg-green-500'
+                                <div className="flex items-center mb-3">
+                                    <div className={`w-4 h-4 rounded-full mr-4 ${context.emr === 'epic' ? 'bg-blue-500' : 'bg-green-500'
                                         }`}></div>
-                                    <div className="font-semibold text-gray-900 text-xl">
+                                    <div className="font-semibold text-gray-900 text-lg">
                                         {context.emr === 'epic' ? 'Epic EMR' : 'Credible EMR'}
                                     </div>
                                 </div>
-                                <div className="text-base text-gray-600 leading-relaxed pl-10">
+                                <div className="text-sm text-gray-600 leading-relaxed pl-8">
                                     {context.emr === 'epic'
-                                        ? 'SmartPhrases and DotPhrases supported • Advanced formatting capabilities • Integrated with Epic workflows'
-                                        : 'Plain text formatting • Streamlined documentation • Optimized for Credible workflows'
+                                        ? 'SmartPhrases and DotPhrases supported'
+                                        : 'Plain text formatting only'
                                     }
                                 </div>
                             </div>
@@ -276,27 +276,27 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
 
                 {/* Advanced Settings Panel */}
                 {showAdvanced && (
-                    <div className="space-y-10">
-                        <div className="border-t border-gray-200 pt-12">
-                            <h4 className="font-semibold text-gray-900 mb-10 flex items-center text-2xl">
-                                <span className="text-3xl mr-4">⚙️</span>
+                    <div className="space-y-8">
+                        <div className="border-t border-gray-200 pt-10">
+                            <h4 className="font-semibold text-gray-900 mb-8 flex items-center text-xl">
+                                <span className="text-2xl mr-4">⚙️</span>
                                 Advanced Generation Settings
                             </h4>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                                <div className="space-y-8">
-                                    <h5 className="font-medium text-gray-800 text-xl mb-8">Documentation Scope</h5>
-                                    <div className="space-y-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                <div className="space-y-6">
+                                    <h5 className="font-medium text-gray-800 text-lg mb-6">Documentation Scope</h5>
+                                    <div className="space-y-6">
                                         <label className="flex items-start">
                                             <input
                                                 type="checkbox"
                                                 checked={context.generationSettings.updateHPI}
                                                 onChange={(e) => updateGenerationSettings({ updateHPI: e.target.checked })}
-                                                className="h-6 w-6 text-blue-600 focus:ring-blue-500 rounded mt-1"
+                                                className="h-5 w-5 text-blue-600 focus:ring-blue-500 rounded mt-1"
                                             />
-                                            <div className="ml-6">
-                                                <span className="text-lg font-medium text-gray-900">Update HPI</span>
-                                                <p className="text-base text-gray-600 mt-2 leading-relaxed">Include history of present illness updates and interval changes</p>
+                                            <div className="ml-5">
+                                                <span className="text-base font-medium text-gray-900">Update HPI</span>
+                                                <p className="text-sm text-gray-600 mt-2 leading-relaxed">Include history of present illness updates</p>
                                             </div>
                                         </label>
                                         <label className="flex items-start">
@@ -304,11 +304,11 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
                                                 type="checkbox"
                                                 checked={context.generationSettings.generateAssessment}
                                                 onChange={(e) => updateGenerationSettings({ generateAssessment: e.target.checked })}
-                                                className="h-6 w-6 text-blue-600 focus:ring-blue-500 rounded mt-1"
+                                                className="h-5 w-5 text-blue-600 focus:ring-blue-500 rounded mt-1"
                                             />
-                                            <div className="ml-6">
-                                                <span className="text-lg font-medium text-gray-900">Generate Assessment</span>
-                                                <p className="text-base text-gray-600 mt-2 leading-relaxed">Create clinical assessment and diagnostic impression</p>
+                                            <div className="ml-5">
+                                                <span className="text-base font-medium text-gray-900">Generate Assessment</span>
+                                                <p className="text-sm text-gray-600 mt-2 leading-relaxed">Create clinical assessment and impression</p>
                                             </div>
                                         </label>
                                         <label className="flex items-start">
@@ -316,11 +316,11 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
                                                 type="checkbox"
                                                 checked={context.generationSettings.addIntervalUpdate}
                                                 onChange={(e) => updateGenerationSettings({ addIntervalUpdate: e.target.checked })}
-                                                className="h-6 w-6 text-blue-600 focus:ring-blue-500 rounded mt-1"
+                                                className="h-5 w-5 text-blue-600 focus:ring-blue-500 rounded mt-1"
                                             />
-                                            <div className="ml-6">
-                                                <span className="text-lg font-medium text-gray-900">Add interval update</span>
-                                                <p className="text-base text-gray-600 mt-2 leading-relaxed">Include changes and progress since last visit</p>
+                                            <div className="ml-5">
+                                                <span className="text-base font-medium text-gray-900">Add interval update</span>
+                                                <p className="text-sm text-gray-600 mt-2 leading-relaxed">Include changes since last visit</p>
                                             </div>
                                         </label>
                                         <label className="flex items-start">
@@ -328,29 +328,29 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
                                                 type="checkbox"
                                                 checked={context.generationSettings.updatePlan}
                                                 onChange={(e) => updateGenerationSettings({ updatePlan: e.target.checked })}
-                                                className="h-6 w-6 text-blue-600 focus:ring-blue-500 rounded mt-1"
+                                                className="h-5 w-5 text-blue-600 focus:ring-blue-500 rounded mt-1"
                                             />
-                                            <div className="ml-6">
-                                                <span className="text-lg font-medium text-gray-900">Update plan</span>
-                                                <p className="text-base text-gray-600 mt-2 leading-relaxed">Modify treatment plan based on visit discussion</p>
+                                            <div className="ml-5">
+                                                <span className="text-base font-medium text-gray-900">Update plan</span>
+                                                <p className="text-sm text-gray-600 mt-2 leading-relaxed">Modify treatment plan based on visit</p>
                                             </div>
                                         </label>
                                     </div>
                                 </div>
 
-                                <div className="space-y-8">
-                                    <h5 className="font-medium text-gray-800 text-xl mb-8">Clinical Features</h5>
-                                    <div className="space-y-8">
+                                <div className="space-y-6">
+                                    <h5 className="font-medium text-gray-800 text-lg mb-6">Clinical Features</h5>
+                                    <div className="space-y-6">
                                         <label className="flex items-start">
                                             <input
                                                 type="checkbox"
                                                 checked={context.generationSettings.modifyPsychExam}
                                                 onChange={(e) => updateGenerationSettings({ modifyPsychExam: e.target.checked })}
-                                                className="h-6 w-6 text-indigo-600 focus:ring-indigo-500 rounded mt-1"
+                                                className="h-5 w-5 text-indigo-600 focus:ring-indigo-500 rounded mt-1"
                                             />
-                                            <div className="ml-6">
-                                                <span className="text-lg font-medium text-gray-900">Modify psych exam</span>
-                                                <p className="text-base text-gray-600 mt-2 leading-relaxed">Update mental status examination findings</p>
+                                            <div className="ml-5">
+                                                <span className="text-base font-medium text-gray-900">Modify psych exam</span>
+                                                <p className="text-sm text-gray-600 mt-2 leading-relaxed">Update mental status examination findings</p>
                                             </div>
                                         </label>
                                         <label className="flex items-start">
@@ -358,11 +358,11 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
                                                 type="checkbox"
                                                 checked={context.generationSettings.comprehensiveIntake}
                                                 onChange={(e) => updateGenerationSettings({ comprehensiveIntake: e.target.checked })}
-                                                className="h-6 w-6 text-indigo-600 focus:ring-indigo-500 rounded mt-1"
+                                                className="h-5 w-5 text-indigo-600 focus:ring-indigo-500 rounded mt-1"
                                             />
-                                            <div className="ml-6">
-                                                <span className="text-lg font-medium text-gray-900">Comprehensive intake</span>
-                                                <p className="text-base text-gray-600 mt-2 leading-relaxed">Generate full psychiatric intake documentation</p>
+                                            <div className="ml-5">
+                                                <span className="text-base font-medium text-gray-900">Comprehensive intake</span>
+                                                <p className="text-sm text-gray-600 mt-2 leading-relaxed">Generate full psychiatric intake documentation</p>
                                             </div>
                                         </label>
                                         <label className="flex items-start">
@@ -370,11 +370,11 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
                                                 type="checkbox"
                                                 checked={context.generationSettings.includeEpicSyntax}
                                                 onChange={(e) => updateGenerationSettings({ includeEpicSyntax: e.target.checked })}
-                                                className="h-6 w-6 text-indigo-600 focus:ring-indigo-500 rounded mt-1"
+                                                className="h-5 w-5 text-indigo-600 focus:ring-indigo-500 rounded mt-1"
                                             />
-                                            <div className="ml-6">
-                                                <span className="text-lg font-medium text-gray-900">Epic SmartPhrases</span>
-                                                <p className="text-base text-gray-600 mt-2 leading-relaxed">Include Epic-specific formatting and shortcuts</p>
+                                            <div className="ml-5">
+                                                <span className="text-base font-medium text-gray-900">Epic SmartPhrases</span>
+                                                <p className="text-sm text-gray-600 mt-2 leading-relaxed">Include Epic-specific formatting and shortcuts</p>
                                             </div>
                                         </label>
                                         <label className="flex items-start">
@@ -382,11 +382,11 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
                                                 type="checkbox"
                                                 checked={context.generationSettings.referencePreviousVisits}
                                                 onChange={(e) => updateGenerationSettings({ referencePreviousVisits: e.target.checked })}
-                                                className="h-6 w-6 text-purple-600 focus:ring-purple-500 rounded mt-1"
+                                                className="h-5 w-5 text-purple-600 focus:ring-purple-500 rounded mt-1"
                                             />
-                                            <div className="ml-6">
-                                                <span className="text-lg font-medium text-gray-900">Reference previous visits</span>
-                                                <p className="text-base text-gray-600 mt-2 leading-relaxed">Include historical context and continuity of care</p>
+                                            <div className="ml-5">
+                                                <span className="text-base font-medium text-gray-900">Reference previous visits</span>
+                                                <p className="text-sm text-gray-600 mt-2 leading-relaxed">Include historical context and continuity</p>
                                             </div>
                                         </label>
                                     </div>
@@ -398,14 +398,14 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
 
                 {/* Context Summary */}
                 <div className="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 p-10 rounded-2xl border border-gray-200 shadow-sm">
-                    <h4 className="font-semibold text-gray-900 mb-10 flex items-center text-xl">
-                        <span className="text-3xl mr-4">📊</span>
+                    <h4 className="font-semibold text-gray-900 mb-8 flex items-center text-xl">
+                        <span className="text-2xl mr-4">📊</span>
                         Configuration Summary
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-base">
-                        <div className="flex items-center justify-between p-6 bg-white rounded-lg shadow-sm">
-                            <div>
-                                <span className="font-medium text-gray-700 block mb-2">Clinical Setting</span>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 text-base">
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between p-6 bg-white rounded-lg shadow-sm">
+                                <span className="font-medium text-gray-700">Clinical Setting:</span>
                                 <span className={`px-4 py-2 rounded-full text-sm font-semibold ${context.clinic === 'hmhi-downtown'
                                     ? 'bg-blue-100 text-blue-800'
                                     : 'bg-green-100 text-green-800'
@@ -413,10 +413,8 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
                                     {context.clinic === 'hmhi-downtown' ? 'HMHI Downtown' : 'Davis Behavioral Health'}
                                 </span>
                             </div>
-                        </div>
-                        <div className="flex items-center justify-between p-6 bg-white rounded-lg shadow-sm">
-                            <div>
-                                <span className="font-medium text-gray-700 block mb-2">Visit Type</span>
+                            <div className="flex items-center justify-between p-6 bg-white rounded-lg shadow-sm">
+                                <span className="font-medium text-gray-700">Visit Type:</span>
                                 <span className="px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-semibold">
                                     {context.visitType.split('-').map(word =>
                                         word.charAt(0).toUpperCase() + word.slice(1)
@@ -424,9 +422,9 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
                                 </span>
                             </div>
                         </div>
-                        <div className="flex items-center justify-between p-6 bg-white rounded-lg shadow-sm">
-                            <div>
-                                <span className="font-medium text-gray-700 block mb-2">EMR System</span>
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between p-6 bg-white rounded-lg shadow-sm">
+                                <span className="font-medium text-gray-700">EMR System:</span>
                                 <span className={`px-4 py-2 rounded-full text-sm font-semibold ${context.emr === 'epic'
                                     ? 'bg-blue-100 text-blue-800'
                                     : 'bg-green-100 text-green-800'
@@ -434,10 +432,8 @@ export default function ClinicalContextSelector({ context, onContextChange }: Cl
                                     {context.emr.toUpperCase()}
                                 </span>
                             </div>
-                        </div>
-                        <div className="flex items-center justify-between p-6 bg-white rounded-lg shadow-sm">
-                            <div>
-                                <span className="font-medium text-gray-700 block mb-2">Active Features</span>
+                            <div className="flex items-center justify-between p-6 bg-white rounded-lg shadow-sm">
+                                <span className="font-medium text-gray-700">Active Features:</span>
                                 <span className="px-4 py-2 bg-gray-100 text-gray-800 rounded-full text-sm font-semibold">
                                     {Object.values(context.generationSettings).filter(Boolean).length} of {Object.keys(context.generationSettings).length}
                                 </span>
