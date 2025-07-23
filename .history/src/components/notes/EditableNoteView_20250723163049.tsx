@@ -74,7 +74,6 @@ export default function EditableNoteView({
         ],
         content: formatContentWithSOAP(initialContent),
         editable: !readOnly,
-        immediatelyRender: false, // Fix for SSR hydration issues
         onUpdate: ({ editor }) => {
             setHasUnsavedChanges(true);
             debouncedAutoSave(editor.getHTML());

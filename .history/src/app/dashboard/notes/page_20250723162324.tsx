@@ -4,7 +4,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { notesService } from '@/lib/firebase/notes';
 import { EnhancedNote } from '@/types/notes';
 import { ClinicalContext } from '@/components/clinical/ClinicalContextSelector';

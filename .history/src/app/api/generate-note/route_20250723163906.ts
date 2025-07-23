@@ -78,27 +78,7 @@ export async function POST(request: NextRequest) {
                 template
             });
 
-            console.log('🔍 Gemini response structure:', typeof geminiResponse, Object.keys(geminiResponse || {}));
-
-            // Extract content based on the actual response structure
-            if (geminiResponse.success && geminiResponse.note) {
-                noteContent = geminiResponse.note.content || geminiResponse.note;
-            } else {
-                // Try other possible structures as fallback
-                noteContent = geminiResponse?.content ||
-                    geminiResponse?.text ||
-                    geminiResponse?.response?.text ||
-                    geminiResponse;
-            }
-
-            console.log('📝 Extracted note content type:', typeof noteContent);
-            console.log('📝 Note content preview:', typeof noteContent === 'string' ? `${noteContent.substring(0, 100)}...` : 'NOT A STRING - ' + JSON.stringify(noteContent).substring(0, 100));
-
-            if (!noteContent || typeof noteContent !== 'string') {
-                console.error('❌ Invalid note content from Gemini:', geminiResponse);
-                throw new Error(`Gemini returned invalid content. Type: ${typeof noteContent}, Structure: ${JSON.stringify(Object.keys(geminiResponse || {}))}`);
-            }
-
+            noteContent = geminiResponse.content;
             aiProvider = 'gemini';
             console.log('✅ Gemini generation successful');
         } catch (geminiError) {
@@ -112,29 +92,7 @@ export async function POST(request: NextRequest) {
                         template
                     });
 
-                    console.log('🔍 Claude response structure:', typeof claudeResponse, Object.keys(claudeResponse || {}));
-
-                    // Extract content based on the actual response structure
-                    if (claudeResponse.success && claudeResponse.note) {
-                        noteContent = claudeResponse.note.content || claudeResponse.note;
-                    } else if (claudeResponse.error) {
-                        throw new Error(`Claude API error: ${claudeResponse.error.message || 'Unknown error'}`);
-                    } else {
-                        // Try other possible structures as fallback
-                        noteContent = claudeResponse?.content ||
-                            claudeResponse?.text ||
-                            claudeResponse?.response?.text ||
-                            claudeResponse;
-                    }
-
-                    console.log('📝 Claude note content type:', typeof noteContent);
-                    console.log('📝 Claude note preview:', typeof noteContent === 'string' ? `${noteContent.substring(0, 100)}...` : 'NOT A STRING - ' + JSON.stringify(noteContent).substring(0, 100));
-
-                    if (!noteContent || typeof noteContent !== 'string') {
-                        console.error('❌ Invalid note content from Claude:', claudeResponse);
-                        throw new Error(`Claude returned invalid content. Type: ${typeof noteContent}, Structure: ${JSON.stringify(Object.keys(claudeResponse || {}))}`);
-                    }
-
+                    noteContent = claudeResponse.content;
                     aiProvider = 'claude';
                     console.log('✅ Claude generation successful');
                 } catch (claudeError) {
@@ -167,18 +125,8 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Validate note formatting for clinical context (with safety check)
-        let validation = { isValid: true, errors: [], warnings: [] };
-
-        if (noteContent && typeof noteContent === 'string') {
-            validation = validateNoteFormatting(noteContent, clinicalContext as ClinicalContext);
-        } else {
-            validation = {
-                isValid: false,
-                errors: ['Generated content is empty or invalid'],
-                warnings: ['Note generation may have failed']
-            };
-        }
+        // Validate note formatting for clinical context
+        const validation = validateNoteFormatting(noteContent, clinicalContext as ClinicalContext);
 
         if (!validation.isValid) {
             console.warn('⚠️ Note validation warnings:', validation.errors);
@@ -211,41 +159,14 @@ Generate a clean, professional psychiatric SOAP note in plain text format.`;
                     });
 
                     if (retryResponse) {
-                        // Extract content using same logic as above
-                        let retryContent;
-                        if (retryResponse.success && retryResponse.note) {
-                            retryContent = retryResponse.note.content || retryResponse.note;
-                        } else {
-                            retryContent = retryResponse?.content || retryResponse?.text || retryResponse;
-                        }
-
-                        if (retryContent && typeof retryContent === 'string') {
-                            noteContent = retryContent;
-                            console.log('✅ Regeneration successful - plain text format');
-                        }
+                        noteContent = retryResponse.content;
+                        console.log('✅ Regeneration successful - plain text format');
                     }
                 } catch (retryError) {
                     console.error('❌ Regeneration failed:', retryError);
                     // Continue with original note but log the issue
                 }
             }
-        }
-
-        // Final validation - make sure we have valid content
-        if (!noteContent || typeof noteContent !== 'string') {
-            console.error('💥 Final validation failed - no valid content generated');
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: 'AI provider generated invalid or empty content',
-                    details: {
-                        provider: aiProvider,
-                        responseType: typeof noteContent,
-                        validationErrors: validation.errors
-                    }
-                },
-                { status: 500 }
-            );
         }
 
         // Structure the note with SOAP format if not already structured
@@ -327,22 +248,6 @@ Generate a clean, professional psychiatric SOAP note in plain text format.`;
  * Ensure note has proper SOAP structure
  */
 function ensureSOAPStructure(content: string, context: ClinicalContext): string {
-    // Add safety check
-    if (!content || typeof content !== 'string') {
-        console.error('⚠️ ensureSOAPStructure received invalid content:', typeof content);
-        return `SUBJECTIVE:
-[Note generation failed - please try again]
-
-OBJECTIVE:
-[Mental status examination and objective findings to be documented]
-
-ASSESSMENT:
-[Clinical impression and diagnostic assessment to be documented]
-
-PLAN:
-[Treatment plan and recommendations to be documented]`;
-    }
-
     // If content already has SOAP headers, return as-is
     if (content.includes('SUBJECTIVE:') && content.includes('OBJECTIVE:') &&
         content.includes('ASSESSMENT:') && content.includes('PLAN:')) {

@@ -38,7 +38,7 @@ interface EditableNoteViewProps {
         clinic?: string;
         emr?: string;
     };
-    onSave?: (content: string, changes?: any) => Promise<void>;
+    onSave?: (content: string, changes: any) => Promise<void>;
     onAutoSave?: (content: string) => Promise<void>;
     readOnly?: boolean;
 }
@@ -74,7 +74,6 @@ export default function EditableNoteView({
         ],
         content: formatContentWithSOAP(initialContent),
         editable: !readOnly,
-        immediatelyRender: false, // Fix for SSR hydration issues
         onUpdate: ({ editor }) => {
             setHasUnsavedChanges(true);
             debouncedAutoSave(editor.getHTML());
@@ -142,7 +141,7 @@ export default function EditableNoteView({
         setIsSaving(true);
         try {
             const content = editor.getHTML();
-            await onSave(content, {}); // Simplified for now
+            await onSave(content, { /* changes tracking would go here */ });
             setHasUnsavedChanges(false);
             setLastSaveTime(new Date());
         } catch (error) {
@@ -157,15 +156,13 @@ export default function EditableNoteView({
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.ctrlKey && e.key === 's') {
                 e.preventDefault();
-                if (editor && onSave && !isSaving && hasUnsavedChanges) {
-                    handleSave();
-                }
+                handleSave();
             }
         };
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [editor, onSave, isSaving, hasUnsavedChanges]);
+    }, [handleSave]);
 
     if (!editor) {
         return (

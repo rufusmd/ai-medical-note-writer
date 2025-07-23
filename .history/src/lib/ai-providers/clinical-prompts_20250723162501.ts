@@ -309,20 +309,9 @@ export function validateNoteFormatting(noteContent: string, context: ClinicalCon
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Add null/undefined checks
-    if (!noteContent || typeof noteContent !== 'string') {
-        errors.push('Note content is missing or invalid');
-        return { isValid: false, errors, warnings };
-    }
-
-    if (!context || typeof context !== 'object') {
-        warnings.push('Clinical context is missing - skipping context-specific validation');
-        return { isValid: true, errors, warnings };
-    }
-
     // Check for improper Epic syntax in Davis Behavioral Health notes
     if (context.clinic === 'Davis Behavioral Health') {
-        if (noteContent.includes('@') || (noteContent.includes('.') && noteContent.match(/\.[a-z]+/))) {
+        if (noteContent.includes('@') || noteContent.includes('.') && noteContent.match(/\.[a-z]+/)) {
             errors.push('Davis Behavioral Health notes should not contain Epic SmartPhrases or DotPhrases');
         }
     }

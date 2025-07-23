@@ -80,23 +80,18 @@ export async function POST(request: NextRequest) {
 
             console.log('🔍 Gemini response structure:', typeof geminiResponse, Object.keys(geminiResponse || {}));
 
-            // Extract content based on the actual response structure
-            if (geminiResponse.success && geminiResponse.note) {
-                noteContent = geminiResponse.note.content || geminiResponse.note;
-            } else {
-                // Try other possible structures as fallback
-                noteContent = geminiResponse?.content ||
-                    geminiResponse?.text ||
-                    geminiResponse?.response?.text ||
-                    geminiResponse;
-            }
+            // Try different possible response structures
+            noteContent = geminiResponse?.content ||
+                geminiResponse?.text ||
+                geminiResponse?.response?.text ||
+                geminiResponse;
 
             console.log('📝 Extracted note content type:', typeof noteContent);
-            console.log('📝 Note content preview:', typeof noteContent === 'string' ? `${noteContent.substring(0, 100)}...` : 'NOT A STRING - ' + JSON.stringify(noteContent).substring(0, 100));
+            console.log('📝 Note content preview:', noteContent ? `${noteContent.substring(0, 100)}...` : 'UNDEFINED');
 
             if (!noteContent || typeof noteContent !== 'string') {
                 console.error('❌ Invalid note content from Gemini:', geminiResponse);
-                throw new Error(`Gemini returned invalid content. Type: ${typeof noteContent}, Structure: ${JSON.stringify(Object.keys(geminiResponse || {}))}`);
+                throw new Error('Gemini returned invalid or empty content');
             }
 
             aiProvider = 'gemini';
@@ -114,25 +109,18 @@ export async function POST(request: NextRequest) {
 
                     console.log('🔍 Claude response structure:', typeof claudeResponse, Object.keys(claudeResponse || {}));
 
-                    // Extract content based on the actual response structure
-                    if (claudeResponse.success && claudeResponse.note) {
-                        noteContent = claudeResponse.note.content || claudeResponse.note;
-                    } else if (claudeResponse.error) {
-                        throw new Error(`Claude API error: ${claudeResponse.error.message || 'Unknown error'}`);
-                    } else {
-                        // Try other possible structures as fallback
-                        noteContent = claudeResponse?.content ||
-                            claudeResponse?.text ||
-                            claudeResponse?.response?.text ||
-                            claudeResponse;
-                    }
+                    // Try different possible response structures for Claude
+                    noteContent = claudeResponse?.content ||
+                        claudeResponse?.text ||
+                        claudeResponse?.response?.text ||
+                        claudeResponse;
 
                     console.log('📝 Claude note content type:', typeof noteContent);
-                    console.log('📝 Claude note preview:', typeof noteContent === 'string' ? `${noteContent.substring(0, 100)}...` : 'NOT A STRING - ' + JSON.stringify(noteContent).substring(0, 100));
+                    console.log('📝 Claude note preview:', noteContent ? `${noteContent.substring(0, 100)}...` : 'UNDEFINED');
 
                     if (!noteContent || typeof noteContent !== 'string') {
                         console.error('❌ Invalid note content from Claude:', claudeResponse);
-                        throw new Error(`Claude returned invalid content. Type: ${typeof noteContent}, Structure: ${JSON.stringify(Object.keys(claudeResponse || {}))}`);
+                        throw new Error('Claude returned invalid or empty content');
                     }
 
                     aiProvider = 'claude';
@@ -211,18 +199,8 @@ Generate a clean, professional psychiatric SOAP note in plain text format.`;
                     });
 
                     if (retryResponse) {
-                        // Extract content using same logic as above
-                        let retryContent;
-                        if (retryResponse.success && retryResponse.note) {
-                            retryContent = retryResponse.note.content || retryResponse.note;
-                        } else {
-                            retryContent = retryResponse?.content || retryResponse?.text || retryResponse;
-                        }
-
-                        if (retryContent && typeof retryContent === 'string') {
-                            noteContent = retryContent;
-                            console.log('✅ Regeneration successful - plain text format');
-                        }
+                        noteContent = retryResponse.content;
+                        console.log('✅ Regeneration successful - plain text format');
                     }
                 } catch (retryError) {
                     console.error('❌ Regeneration failed:', retryError);
