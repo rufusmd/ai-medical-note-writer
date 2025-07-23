@@ -87,6 +87,7 @@ export interface PatientSearchFilters {
     lastDoc?: any; // For pagination
 }
 
+
 export interface PatientStats {
     totalPatients: number;
     activePatients: number;
@@ -108,36 +109,95 @@ export interface PatientStats {
     };
 }
 
-// Basic validation helpers
-export const PatientValidation = {
-    validateName: (name?: string): boolean => {
-        return !!name && name.trim().length >= 2 && name.trim().length <= 100;
-    },
-
-    validateMRN: (mrn?: string): boolean => {
-        if (!mrn) return true; // MRN is optional
-        return /^[A-Z0-9]{3,20}$/i.test(mrn.trim());
-    },
-
-    validateDOB: (dob?: string): boolean => {
-        if (!dob) return true; // DOB is optional
-        const date = new Date(dob);
-        const now = new Date();
-        const minDate = new Date(now.getFullYear() - 120, 0, 1); // 120 years ago
-        return date >= minDate && date <= now;
-    }
-};
-
-// Patient context for AI note generation
+// For enhanced note generation with patient context
 export interface PatientContext {
     id: string;
     name: string;
-    age?: number;
+    age?: number; // Calculated from DOB
     gender?: string;
     primaryDiagnosis?: string;
     currentMedications?: string[];
     allergies?: string[];
     lastVisitSummary?: string;
+    treatmentResponse?: string;
     ongoingConcerns?: string[];
-    preferredEMR: string;
+    preferredEMR: 'epic' | 'credible';
 }
+
+// Validation helpers
+export const PatientValidation = {
+    validateName: (name: string): boolean => {
+        return name.trim().length >= 2;
+    },
+
+    validateMRN: (mrn?: string): boolean => {
+        if (!mrn) return true; // MRN is optional
+        return /^[A-Z0-9]{3,20}$/.test(mrn.toUpperCase());
+    },
+
+    validateDOB: (dob?: string): boolean => {
+        if (!dob) return true; // DOB is optional
+        const date = new Date(dob);
+        const today = new Date();
+        const age = today.getFullYear() - date.getFullYear();
+        return !isNaN(date.getTime()) && age >= 0 && age <= 120;
+    },
+
+    validatePhoneNumber: (phone?: string): boolean => {
+        if (!phone) return true; // Phone is optional
+        return /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/.test(phone);
+    }
+};
+
+// Helper functions
+export const PatientHelpers = {
+    calculateAge: (dob?: string): number | undefined => {
+        if (!dob) return undefined;
+        const birthDate = new Date(dob);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
+    },
+
+    formatPatientName: (patient: Patient): string => {
+        if (patient.mrn) {
+            return `${patient.name} (${patient.mrn})`;
+        }
+        return patient.name;
+    },
+
+    getPatientContext: (patient: Patient): PatientContext => {
+        return {
+            id: patient.id,
+            name: patient.name,
+            age: PatientHelpers.calculateAge(patient.dob),
+            gender: patient.gender,
+            primaryDiagnosis: patient.primaryDiagnosis,
+            currentMedications: patient.currentMedications || [],
+            allergies: patient.allergies || [],
+            lastVisitSummary: patient.treatmentHistory?.[0]?.summary,
+            ongoingConcerns: [], // Could be extracted from recent notes
+            preferredEMR: patient.preferredEMR
+        };
+    },
+
+    formatLastVisit: (patient: Patient): string => {
+        if (!patient.lastVisitDate) return 'No previous visits';
+
+        const lastVisit = patient.lastVisitDate.toDate();
+        const today = new Date();
+        const diffTime = Math.abs(today.getTime() - lastVisit.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays < 7) return `${diffDays} days ago`;
+        if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
+        if (diffDays < 365) return `${Math.ceil(diffDays / 30)} months ago`;
+        return `${Math.ceil(diffDays / 365)} years ago`;
+    }
+};

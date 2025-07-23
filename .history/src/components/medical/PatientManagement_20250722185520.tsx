@@ -31,12 +31,6 @@ import { patientService } from '@/lib/firebase/patients';
 import { Patient, PatientStats } from '@/types/patient';
 import PatientCreationForm from './PatientCreationForm';
 
-// Debug logging
-console.log('🔍 Debugging PatientManagement imports:');
-console.log('- patientService:', patientService);
-console.log('- patientService.getPatientsByUser:', patientService?.getPatientsByUser);
-console.log('- typeof getPatientsByUser:', typeof patientService?.getPatientsByUser);
-
 const PatientManagement: React.FC = () => {
     const router = useRouter();
     const { user } = useAuth();
@@ -62,31 +56,18 @@ const PatientManagement: React.FC = () => {
 
     // Load patients from Firebase
     const fetchPatients = async () => {
-        if (!user?.uid) {
-            console.log('🚫 No user ID available for fetching patients');
-            setLoading(false);
-            return;
-        }
-
-        console.log('🔍 Debug - About to call patientService.getPatientsByUser');
-        console.log('- user.uid:', user.uid);
-        console.log('- patientService:', patientService);
-        console.log('- method exists:', typeof patientService.getPatientsByUser);
+        if (!user?.uid) return;
 
         setLoading(true);
         try {
-            console.log('📞 Calling patientService.getPatientsByUser...');
             const userPatients = await patientService.getPatientsByUser(user.uid);
-            console.log('✅ Successfully fetched patients:', userPatients);
             setPatients(userPatients);
 
-            console.log('📊 Fetching patient statistics...');
             const patientStats = await patientService.getPatientStatistics(user.uid);
-            console.log('✅ Successfully fetched stats:', patientStats);
             setStats(patientStats);
         } catch (error) {
-            console.error('❌ Error loading patients:', error);
-            setError('Failed to load patients: ' + (error instanceof Error ? error.message : String(error)));
+            console.error('Error loading patients:', error);
+            setError('Failed to load patients');
         } finally {
             setLoading(false);
         }
@@ -287,50 +268,24 @@ const PatientManagement: React.FC = () => {
                     )}
                 </div>
 
-                {/* Subtle Action Icons */}
-                <div className="flex items-center space-x-1">
-                    <div className="relative group">
-                        <button
-                            onClick={() => handleGenerateNote(patient)}
-                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all duration-200 group-hover:scale-105"
-                            title="Generate note for this patient"
-                        >
-                            <FileText className="w-4 h-4" />
-                        </button>
-                        {/* Tooltip */}
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                            Generate Note
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-900"></div>
-                        </div>
-                    </div>
-                    <div className="relative group">
-                        <button
-                            onClick={() => setSelectedPatient(patient)}
-                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-all duration-200 group-hover:scale-105"
-                            title="View patient details"
-                        >
-                            <Eye className="w-4 h-4" />
-                        </button>
-                        {/* Tooltip */}
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                            View Details
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-900"></div>
-                        </div>
-                    </div>
-                    <div className="relative group">
-                        <button
-                            onClick={() => handleEditPatient(patient)}
-                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-all duration-200 group-hover:scale-105"
-                            title="Edit patient"
-                        >
-                            <Edit className="w-4 h-4" />
-                        </button>
-                        {/* Tooltip */}
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                            Edit Patient
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-900"></div>
-                        </div>
-                    </div>
+                {/* Action Buttons */}
+                <div className="flex items-center space-x-2">
+                    <button
+                        onClick={() => handleGenerateNote(patient)}
+                        className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+                        title="Generate note for this patient"
+                    >
+                        <PenTool className="w-4 h-4" />
+                        <span>Generate Note</span>
+                    </button>
+                    <button
+                        onClick={() => setSelectedPatient(patient)}
+                        className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+                        title="View patient details"
+                    >
+                        <Eye className="w-4 h-4" />
+                        <span>View</span>
+                    </button>
                 </div>
             </div>
         </div>
