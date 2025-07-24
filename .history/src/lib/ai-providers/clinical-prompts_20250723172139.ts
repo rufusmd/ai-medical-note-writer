@@ -37,47 +37,22 @@ ${context.clinic === 'Davis Behavioral Health' ?
     }
 
     /**
-     * Get EMR-specific prompt instructions - ENHANCED VERSION WITH STRONGER VALIDATION
+     * Get EMR-specific prompt instructions - FIXED VERSION
      */
     private static getEMRSpecificPrompt(context: ClinicalContext): string {
         switch (context.clinic) {
             case 'Davis Behavioral Health':
                 return `CLINIC: Davis Behavioral Health
 EMR SYSTEM: Credible
-🚨 CRITICAL CREDIBLE EMR REQUIREMENTS 🚨
-This clinic uses Credible EMR system. You MUST output PLAIN TEXT ONLY.
-
-ABSOLUTELY FORBIDDEN:
+CRITICAL: This clinic uses Credible EMR system. You MUST output PLAIN TEXT ONLY.
 - NO Epic SmartPhrases (@SMARTPHRASE@)
 - NO DotPhrases (.dotphrase)  
 - NO SmartLists ({List:123})
-- NO *** wildcards or asterisks as placeholders
-- NO Epic syntax of any kind
-- NO placeholder symbols (* $ # @)
-- NO Epic terminology references
-
-REQUIRED FORMAT:
-- Write complete sentences and paragraphs
-- Use actual clinical descriptions, not placeholders
-- Write as if typing directly into a basic text field
-- Complete all sections with real clinical content
-- Never leave anything as "to be filled in later"
-- Write full mental status exam descriptions
-- Provide complete diagnostic assessments
-
-EXAMPLE OF CORRECT FORMAT:
-Mental Status Exam:
-- Appearance: Well-groomed, appears stated age, casually dressed
-- Behavior: Cooperative, good eye contact, no psychomotor agitation
-- Speech: Normal rate, rhythm, and volume
-- Mood/Affect: "Anxious" mood, anxious affect congruent with stated mood
-
-EXAMPLE OF FORBIDDEN FORMAT:
-Mental Status Exam: ***
-Assessment: *** (diagnosis)
-Plan: *** medication
-
-Remember: Credible EMR is a simple text-based system. Write naturally.`;
+- NO special EMR syntax of any kind
+- NO *** wildcards
+- Use standard psychiatric documentation in plain text format
+- Focus on clear, professional clinical language without any EMR-specific formatting
+- Write notes as if you were writing directly in a simple text editor`;
 
             case 'HMHI Downtown':
                 return `CLINIC: HMHI Downtown  
@@ -242,26 +217,13 @@ ${template}
         // CRITICAL: Add extra validation for Davis Behavioral Health
         const extraValidation = context.clinic === 'Davis Behavioral Health' ? `
 
-🚨 FINAL VALIDATION FOR CREDIBLE EMR - READ CAREFULLY 🚨
-Before finalizing your response, check that your note contains:
-- ZERO @ symbols anywhere in the text
-- ZERO { or } symbols anywhere in the text  
-- ZERO *** symbols or asterisks used as placeholders
-- ZERO .dotphrase syntax
-- NO Epic terminology (SmartPhrase, SmartList, etc.)
-
-Instead of placeholders, write complete clinical descriptions:
-❌ WRONG: "Mental Status Exam: ***"
-✅ CORRECT: "Mental Status Exam: Alert and cooperative, well-groomed appearance, normal speech"
-
-❌ WRONG: "Assessment: *** (ADHD, anxiety)"  
-✅ CORRECT: "Assessment: ADHD Combined Type, Generalized Anxiety Disorder"
-
-❌ WRONG: "Plan: *** medication"
-✅ CORRECT: "Plan: Initiate Guanfacine 1mg daily for ADHD symptoms"
-
-This is a Credible EMR note - write it like you're typing in a simple text box.
-NO PLACEHOLDERS. COMPLETE SENTENCES ONLY.` : '';
+🚨 CRITICAL VALIDATION FOR CREDIBLE EMR:
+- Double-check your output contains NO @ symbols
+- Double-check your output contains NO { or } symbols  
+- Double-check your output contains NO *** symbols
+- Double-check your output contains NO .dotphrase syntax
+- Your note must be completely plain text
+- Use only standard punctuation and formatting` : '';
 
         return `${systemPrompt}
 

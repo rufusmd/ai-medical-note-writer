@@ -161,56 +161,37 @@ export async function POST(request: NextRequest) {
         // Enhanced validation for EMR-specific formatting
         const validation = ClinicalPromptGenerator.validateNoteFormatting(noteContent, clinicalContext as ClinicalContext);
 
-        // CRITICAL: If Davis Behavioral Health note contains ANY Epic syntax, regenerate
+        // CRITICAL: If Davis Behavioral Health note contains Epic syntax, regenerate
         if (!validation.isValid && clinicalContext.clinic === 'Davis Behavioral Health') {
             const hasEpicSyntax = validation.errors.some(error =>
                 error.includes('SmartPhrases') ||
                 error.includes('DotPhrases') ||
                 error.includes('SmartLists') ||
-                error.includes('wildcards') ||
-                error.includes('Asterisk placeholders') ||
-                error.includes('placeholder syntax')
+                error.includes('wildcards')
             );
 
             if (hasEpicSyntax) {
-                console.warn('⚠️ Davis Behavioral Health note contains Epic syntax, regenerating with stronger prompt...');
+                console.warn('⚠️ Davis Behavioral Health note contains Epic syntax, regenerating...');
 
-                // Create an ultra-strong plain text prompt
-                const ultraPlainTextPrompt = `URGENT: Generate a psychiatric SOAP note for Davis Behavioral Health (Credible EMR).
+                // Create a stronger plain text prompt
+                const plainTextPrompt = `${transcript.content}
 
-CLINICAL INFORMATION:
-${transcript.content}
+🚨 URGENT: This is for Davis Behavioral Health using Credible EMR.
+You MUST output PLAIN TEXT ONLY. Do NOT include:
+- @SMARTPHRASE@ syntax
+- .dotphrase syntax  
+- {SmartList:123} syntax
+- Any Epic EMR formatting
+- *** wildcards
 
-🚨 CRITICAL REQUIREMENTS - READ CAREFULLY 🚨
-- This is for CREDIBLE EMR (NOT Epic)
-- Output MUST be 100% plain text
-- ABSOLUTELY NO asterisks (*) anywhere in the note
-- ABSOLUTELY NO @ symbols anywhere  
-- ABSOLUTELY NO curly braces { }
-- ABSOLUTELY NO Epic syntax of any kind
-- Write complete clinical descriptions, not placeholders
-
-EXAMPLE OF WHAT TO WRITE:
-Mental Status Exam:
-- Appearance: Well-groomed, appears stated age, appropriately dressed
-- Behavior: Cooperative throughout interview, good eye contact maintained
-- Speech: Normal rate, rhythm, and volume
-- Mood: "Anxious" per patient report
-- Affect: Anxious, congruent with stated mood
-
-Assessment:
-ADHD Combined Type - Patient reports longstanding attention and hyperactivity symptoms consistent with ADHD presentation
-Generalized Anxiety Disorder - Significant anxiety symptoms with worry and physiological manifestations
-
-DO NOT write incomplete sections. Complete every section with actual clinical content.
-This note will be entered into a simple text-based EMR system.`;
+Generate a clean, professional psychiatric SOAP note in plain text format only.`;
 
                 try {
                     const retryResponse = await (aiProvider === 'gemini' && geminiClient ?
                         geminiClient :
                         claudeClient
                     )?.generateNote({
-                        transcript: { content: ultraPlainTextPrompt },
+                        transcript: { content: plainTextPrompt },
                         patientContext,
                         template
                     });
@@ -226,30 +207,12 @@ This note will be entered into a simple text-based EMR system.`;
 
                         if (retryContent && typeof retryContent === 'string') {
                             noteContent = retryContent;
-                            console.log('✅ Regeneration successful - ultra plain text format');
-
-                            // Validate the regenerated content
-                            const retryValidation = ClinicalPromptGenerator.validateNoteFormatting(retryContent, clinicalContext as ClinicalContext);
-                            if (!retryValidation.isValid && retryValidation.errors.some(error =>
-                                error.includes('SmartPhrases') ||
-                                error.includes('wildcards') ||
-                                error.includes('Asterisk') ||
-                                error.includes('placeholder')
-                            )) {
-                                console.warn('🧹 Regeneration still contains Epic syntax, applying emergency cleanup...');
-                                // Import and use the validation utility for emergency cleaning
-                                const { NoteValidationUtility } = await import('@/lib/ai-providers/validation-utility');
-                                noteContent = NoteValidationUtility.cleanEpicSyntax(retryContent);
-                                console.log('🧹 Emergency cleanup applied');
-                            }
+                            console.log('✅ Regeneration successful - plain text format');
                         }
                     }
                 } catch (retryError) {
-                    console.error('❌ Regeneration failed, applying emergency cleanup:', retryError);
-                    // Apply emergency cleanup to original note
-                    const { NoteValidationUtility } = await import('@/lib/ai-providers/validation-utility');
-                    noteContent = NoteValidationUtility.cleanEpicSyntax(noteContent);
-                    console.log('🧹 Emergency cleanup applied to original note');
+                    console.error('❌ Regeneration failed:', retryError);
+                    // Continue with original note but log the issue
                 }
             }
         }
