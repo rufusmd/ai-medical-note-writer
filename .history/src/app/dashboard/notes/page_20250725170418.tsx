@@ -606,7 +606,7 @@ export default function NotesPage() {
                                                         <div className="flex items-center gap-2 text-xs text-gray-500">
                                                             <Clock className="h-3 w-3" />
                                                             <span>
-                                                                {formatTimestamp(note.generatedAt)}
+                                                                {note.generatedAt && new Date(note.generatedAt.toDate()).toLocaleString()}
                                                             </span>
                                                         </div>
                                                     </div>

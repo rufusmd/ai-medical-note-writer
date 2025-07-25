@@ -185,11 +185,12 @@ export class GeminiClient implements AIProvider {
     }
 
     /**
- * Generate note from string prompt (for generate-note route)
+ * Simple method to generate note from string prompt (for generate-note route)
  */
-    async generateNoteFromPrompt(prompt: string): Promise<string> {
+    async generateNote(prompt: string): Promise<string> {
         try {
-            console.log('🔧 GeminiClient.generateNoteFromPrompt called with prompt length:', prompt.length);
+            console.log('🔧 GeminiClient.generateNote called with prompt length:', prompt.length);
+            console.log('🔧 Using model:', this.model ? 'initialized' : 'not initialized');
 
             if (!this.model) {
                 throw new Error('Gemini model not initialized');
@@ -204,6 +205,7 @@ export class GeminiClient implements AIProvider {
 
             const generatedContent = response.text();
             console.log('✅ Gemini content extracted, length:', generatedContent?.length);
+            console.log('🔍 First 200 chars of generated content:', generatedContent?.substring(0, 200));
 
             if (!generatedContent || generatedContent.trim().length === 0) {
                 console.error('❌ Gemini returned empty content');
@@ -213,6 +215,11 @@ export class GeminiClient implements AIProvider {
             return generatedContent;
         } catch (error) {
             console.error('❌ Gemini API error:', error);
+            console.error('❌ Error details:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            });
             throw new Error(`Failed to generate note with Gemini: ${error.message}`);
         }
     }

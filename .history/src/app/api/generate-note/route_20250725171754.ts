@@ -195,14 +195,14 @@ export async function POST(request: NextRequest) {
             if (preferredProvider === 'gemini') {
                 console.log('🤖 Using Gemini for note generation...');
                 console.log('🔧 About to call geminiClient.generateNote()');
-                noteContent = await geminiClient.generateNoteFromPrompt(finalPrompt);
+                noteContent = await geminiClient.generateNote(finalPrompt);
                 console.log('✅ Gemini returned content, length:', noteContent?.length);
                 console.log('🔍 First 100 chars:', noteContent?.substring(0, 100));
                 aiProvider = 'gemini';
             } else if (claudeClient && preferredProvider === 'claude') {
                 console.log('🤖 Using Claude for note generation...');
                 console.log('🔧 About to call claudeClient.generateNote()');
-                noteContent = await geminiClient.generateNoteFromPrompt(finalPrompt);
+                noteContent = await claudeClient.generateNote(finalPrompt);
                 console.log('✅ Claude returned content, length:', noteContent?.length);
                 console.log('🔍 First 100 chars:', noteContent?.substring(0, 100));
                 aiProvider = 'claude';
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
                 // Fallback to Gemini if Claude is not available
                 console.log('🤖 Falling back to Gemini for note generation...');
                 console.log('🔧 About to call geminiClient.generateNote() (fallback)');
-                noteContent = await geminiClient.generateNoteFromPrompt(finalPrompt);
+                noteContent = await geminiClient.generateNote(finalPrompt);
                 console.log('✅ Gemini fallback returned content, length:', noteContent?.length);
                 console.log('🔍 First 100 chars:', noteContent?.substring(0, 100));
                 aiProvider = 'gemini';

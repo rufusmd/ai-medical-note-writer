@@ -1,13 +1,12 @@
 // src/app/api/generate-note/route.ts
-// FIXED VERSION: Corrected method calls for ClinicalPromptGenerator
+// Fixed version with proper error handling and serialization
 
 import { NextRequest, NextResponse } from 'next/server';
-import { GeminiClient } from '@/lib/ai-providers/gemini-client';
-import { ClaudeClient } from '@/lib/ai-providers/claude-client';
-import { ClinicalPromptGenerator } from '@/lib/ai-providers/clinical-prompts';
+import { ProviderManager } from '@/lib/ai-providers/provider-manager';
+import { ClinicalPromptGenerator } from '@/lib/ai-providers/clinical-prompt-generator';
 import { notesService } from '@/lib/firebase/notes';
 import { patientsService } from '@/lib/firebase/patients';
-import { ClinicalContext } from '@/components/clinical/ClinicalContextSelector';
+import { ClinicalContext } from '@/types/clinical-context';
 
 // Add this helper function to sanitize error objects for Firebase
 function sanitizeForFirebase(obj: any): any {
@@ -47,234 +46,89 @@ function sanitizeForFirebase(obj: any): any {
     return obj;
 }
 
-// Transfer of Care Data Interface
-interface TransferOfCareData {
-    previousNote: string;
-    parsedNote: {
-        format: 'SOAP' | 'NARRATIVE';
-        emrType: 'epic' | 'credible';
-        sections: Array<{
-            type: string;
-            content: string;
-            wordCount: number;
-            hasEpicSyntax: boolean;
-        }>;
-        confidence: number;
-    };
-}
-
-// GET: Health check endpoint
-export async function GET() {
-    return NextResponse.json({
-        status: 'healthy',
-        message: 'AI Medical Note Generator API',
-        features: [
-            'Dual AI provider support (Gemini + Claude)',
-            'Clinical context awareness',
-            'Transfer of care processing',
-            'SOAP structure enhancement',
-            'Epic syntax preservation',
-            'Firebase integration'
-        ],
-        providers: {
-            gemini: !!process.env.GOOGLE_GEMINI_API_KEY,
-            claude: !!process.env.ANTHROPIC_API_KEY
-        }
-    });
-}
-
-// POST: Generate clinical note
 export async function POST(request: NextRequest) {
     const startTime = Date.now();
 
     try {
+        console.log('🚀 Note generation request received');
+
         const body = await request.json();
+        const {
+            transcript,
+            patientId,
+            userId,
+            clinicalContext,
+            transferOfCareData
+        } = body;
 
         // Validation
-        if (!body.transcript?.content) {
-            return NextResponse.json(
-                { success: false, error: 'Transcript content is required' },
-                { status: 400 }
-            );
-        }
-
-        if (!body.clinicalContext) {
-            return NextResponse.json(
-                { success: false, error: 'Clinical context is required' },
-                { status: 400 }
-            );
-        }
-
-        if (!body.patientId || !body.userId) {
-            return NextResponse.json(
-                { success: false, error: 'Patient ID and User ID are required' },
-                { status: 400 }
-            );
-        }
-
-        const clinicalContext = body.clinicalContext;
-        const isTransferOfCare = clinicalContext.visitType === 'transfer-of-care';
-
-        console.log(`🏥 Generating ${isTransferOfCare ? 'transfer of care' : 'clinical'} note for ${clinicalContext.clinic} (${clinicalContext.emr})`);
-
-        // Get patient context
-        const patientContext = await getPatientContext(body.patientId);
-
-        // Initialize AI clients
-        const geminiApiKey = process.env.GOOGLE_GEMINI_API_KEY;
-        const claudeApiKey = process.env.ANTHROPIC_API_KEY;
-
-        if (!geminiApiKey) {
-            console.error('❌ GOOGLE_GEMINI_API_KEY is missing from environment variables');
+        if (!transcript || !patientId || !userId || !clinicalContext) {
             return NextResponse.json(
                 {
                     success: false,
-                    error: 'Gemini API key not configured. Please check environment variables.'
+                    error: 'Missing required fields: transcript, patientId, userId, clinicalContext'
+                },
+                { status: 400 }
+            );
+        }
+
+        // Get patient context
+        const patientContext = await getPatientContext(patientId);
+        if (!patientContext) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: 'Patient not found'
+                },
+                { status: 404 }
+            );
+        }
+
+        // Generate the note using AI
+        console.log('🤖 Generating note with AI provider');
+        let noteContent: string;
+        let aiProvider: string;
+
+        try {
+            const prompt = body.transferOfCareData
+                ? buildTransferOfCarePrompt(transcript, transferOfCareData, clinicalContext)
+                : ClinicalPromptGenerator.generatePrompt(transcript, clinicalContext, patientContext);
+
+            const result = await ProviderManager.generateNote(prompt, clinicalContext);
+
+            if (!result.success || !result.content) {
+                throw new Error(result.error || 'Failed to generate note content');
+            }
+
+            noteContent = result.content;
+            aiProvider = result.provider || 'unknown';
+
+            console.log(`✅ Note generated successfully using ${aiProvider}: ${noteContent.length} characters`);
+        } catch (aiError) {
+            console.error('❌ AI generation failed:', aiError);
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: 'AI note generation failed',
+                    details: aiError instanceof Error ? aiError.message : 'Unknown AI error'
                 },
                 { status: 500 }
             );
         }
 
-        const geminiClient = new GeminiClient(geminiApiKey);
-        const claudeClient = claudeApiKey ? new ClaudeClient(claudeApiKey) : null;
-        const preferredProvider = body.preferredProvider || 'gemini';
-
-        // Build appropriate prompt based on context
-        let finalPrompt: string;
-        let noteType: string;
-
-        if (body.transferOfCareData && isTransferOfCare) {
-            // Use transfer of care specific prompt
-            finalPrompt = buildTransferOfCarePrompt(
-                body.transcript.content,
-                body.transferOfCareData,
-                clinicalContext
-            );
-            noteType = 'Transfer of Care Update';
-            console.log('🔄 Generating transfer of care note update');
-        } else {
-            // Use standard clinical prompt - FIXED METHOD CALL
-            console.log('🔧 Debugging prompt generation:', {
-                hasContext: !!clinicalContext,
-                hasTranscript: !!body.transcript.content,
-                hasPatientContext: !!patientContext,
-                transcriptLength: body.transcript.content?.length
-            });
-
-            try {
-                finalPrompt = ClinicalPromptGenerator.generateNotePrompt(
-                    clinicalContext,
-                    body.transcript.content,
-                    patientContext
-                );
-                noteType = 'Standard Clinical Note';
-                console.log('📝 Generating standard clinical note');
-                console.log('✅ Prompt generated successfully');
-            } catch (promptError) {
-                console.error('❌ Error generating prompt:', promptError);
-                throw new Error(`Prompt generation failed: ${promptError.message}`);
-            }
-        }
-
-        console.log(`📋 Prompt generated: ${finalPrompt.length} characters`);
-        console.log('🔍 First 200 chars of prompt:', finalPrompt.substring(0, 200));
-
-        // Generate note using preferred provider
-        let noteContent: string;
-        let aiProvider: string;
-
-        console.log('🤖 AI Generation Debug:', {
-            hasGeminiKey: !!geminiApiKey,
-            hasClaudeKey: !!claudeApiKey,
-            preferredProvider,
-            geminiClientCreated: !!geminiClient,
-            claudeClientCreated: !!claudeClient
-        });
-
-        try {
-            if (preferredProvider === 'gemini') {
-                console.log('🤖 Using Gemini for note generation...');
-                console.log('🔧 About to call geminiClient.generateNote()');
-                noteContent = await geminiClient.generateNoteFromPrompt(finalPrompt);
-                console.log('✅ Gemini returned content, length:', noteContent?.length);
-                console.log('🔍 First 100 chars:', noteContent?.substring(0, 100));
-                aiProvider = 'gemini';
-            } else if (claudeClient && preferredProvider === 'claude') {
-                console.log('🤖 Using Claude for note generation...');
-                console.log('🔧 About to call claudeClient.generateNote()');
-                noteContent = await geminiClient.generateNoteFromPrompt(finalPrompt);
-                console.log('✅ Claude returned content, length:', noteContent?.length);
-                console.log('🔍 First 100 chars:', noteContent?.substring(0, 100));
-                aiProvider = 'claude';
-            } else {
-                // Fallback to Gemini if Claude is not available
-                console.log('🤖 Falling back to Gemini for note generation...');
-                console.log('🔧 About to call geminiClient.generateNote() (fallback)');
-                noteContent = await geminiClient.generateNoteFromPrompt(finalPrompt);
-                console.log('✅ Gemini fallback returned content, length:', noteContent?.length);
-                console.log('🔍 First 100 chars:', noteContent?.substring(0, 100));
-                aiProvider = 'gemini';
-            }
-        } catch (error) {
-            console.error(`❌ Error with ${preferredProvider} provider:`, error);
-
-            // Try fallback provider
-            if (preferredProvider === 'gemini' && claudeClient) {
-                console.log('🔄 Attempting fallback to Claude...');
-                try {
-                    noteContent = await claudeClient.generateNote(finalPrompt);
-                    aiProvider = 'claude';
-                } catch (fallbackError) {
-                    console.error('❌ Fallback to Claude also failed:', fallbackError);
-                    throw error; // Throw original error
-                }
-            } else if (preferredProvider === 'claude') {
-                console.log('🔄 Attempting fallback to Gemini...');
-                try {
-                    noteContent = await geminiClient.generateNote(finalPrompt);
-                    aiProvider = 'gemini';
-                } catch (fallbackError) {
-                    console.error('❌ Fallback to Gemini also failed:', fallbackError);
-                    throw error; // Throw original error
-                }
-            } else {
-                throw error;
-            }
-        }
-
-        console.log(`✅ Note generated successfully using ${aiProvider}: ${noteContent.length} characters`);
-        console.log('🔍 Raw AI content (first 500 chars):', noteContent.substring(0, 500));
-
-        // Check if we got valid content
-        if (!noteContent || noteContent.trim().length === 0) {
-            console.error('❌ AI returned empty content!');
-            throw new Error('AI provider returned empty content');
-        }
-
-        // Enhance SOAP structure if needed
-        console.log('🔧 Processing SOAP structure...');
+        // Apply SOAP structure formatting
         const structuredContent = ensureSOAPStructure(noteContent, clinicalContext);
-        console.log('✅ SOAP structure processed, length:', structuredContent.length);
-        console.log('🔍 Structured content (first 500 chars):', structuredContent.substring(0, 500));
-
-        // Validate the generated note
-        const validation = ClinicalPromptGenerator.validateNoteFormatting(structuredContent, clinicalContext);
 
         // Prepare metadata - sanitize any potential error objects
         const noteMetadata = sanitizeForFirebase({
-            patientId: body.patientId,
-            patientName: patientContext?.name || `Patient ${body.patientId}`,
-            transcriptLength: body.transcript.content.length,
-            promptLength: finalPrompt.length,
-            aiProvider,
+            patientId,
+            patientName: patientContext.name,
+            patientMrn: patientContext.mrn,
             generatedAt: new Date(),
-            visitType: clinicalContext.visitType,
-            clinic: clinicalContext.clinic,
-            emr: clinicalContext.emr,
+            aiProvider,
             clinicalContext,
-            validation: validation.isValid,
-            validationDetails: validation,
-            noteType,
+            noteType: body.transferOfCareData ? 'transfer-of-care' : 'standard',
+            processingTimeMs: Date.now() - startTime,
             isTransferOfCare: !!body.transferOfCareData,
             transferMetadata: body.transferOfCareData ? {
                 previousNoteFormat: body.transferOfCareData.parsedNote.format,
@@ -284,14 +138,14 @@ export async function POST(request: NextRequest) {
             } : undefined
         });
 
-        // Sanitize the original content - this is the key fix for Firebase error
+        // Sanitize the original content as well 
         const sanitizedOriginalContent = sanitizeForFirebase(noteContent);
 
         // Save note to Firebase
-        console.log('📝 Creating new clinical note');
+        console.log('💾 Saving note to Firebase');
         const savedNote = await notesService.createNote({
             content: structuredContent,
-            originalContent: sanitizedOriginalContent, // Using sanitized content here
+            originalContent: sanitizedOriginalContent, // This should now be safe for Firebase
             metadata: noteMetadata,
             userId: body.userId,
             isEdited: false,
@@ -322,7 +176,7 @@ export async function POST(request: NextRequest) {
                 generatedAt: new Date().toISOString(),
                 clinicalContext,
                 validation: finalValidation,
-                noteType,
+                noteType: body.transferOfCareData ? 'transfer-of-care' : 'standard',
                 isTransferOfCare: !!body.transferOfCareData,
                 processingTime: Date.now() - startTime
             }
@@ -330,6 +184,10 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         console.error('💥 Error in generate-note API:', error);
+
+        // Sanitize the error object before returning it
+        const sanitizedError = sanitizeForFirebase(error);
+
         return NextResponse.json(
             {
                 success: false,
@@ -343,91 +201,21 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Get patient context information
- */
-async function getPatientContext(patientId: string) {
-    try {
-        const patient = await patientsService.getPatient(patientId);
-        return patient ? {
-            id: patient.id,
-            name: patient.name,
-            mrn: patient.mrn,
-            dob: patient.dob
-        } : null;
-    } catch (error) {
-        console.error('Error fetching patient context:', error);
-        return null;
-    }
-}
-
-/**
- * Build specialized prompt for transfer of care updates
- */
-function buildTransferOfCarePrompt(
-    newTranscript: string,
-    transferData: TransferOfCareData,
-    clinicalContext: ClinicalContext
-): string {
-    const { previousNote, parsedNote } = transferData;
-
-    const basePrompt = `
-# TRANSFER OF CARE NOTE UPDATE
-
-You are updating a clinical note as part of a transfer of care process. You have the previous resident's note and new clinical information.
-
-## Previous Note:
-${previousNote}
-
-## New Clinical Information:
-${newTranscript}
-
-## Clinical Context:
-- Clinic: ${clinicalContext.clinic}
-- EMR: ${clinicalContext.emr}
-- Visit Type: ${clinicalContext.visitType}
-
-Please update the note appropriately, preserving relevant information from the previous note while incorporating the new clinical data. Maintain the same format and structure as the original note.
-
-**Note: Ensure all content is properly formatted for ${clinicalContext.emr} EMR system.**
-`;
-
-    return basePrompt;
-}
-
-/**
  * Enhanced SOAP structure formatting
  */
 function ensureSOAPStructure(content: string, context: ClinicalContext): string {
-    console.log('🔧 ensureSOAPStructure called with:', {
-        hasContent: !!content,
-        contentType: typeof content,
-        contentLength: content?.length,
-        first100Chars: content?.substring(0, 100)
-    });
-
     // Add safety check
     if (!content || typeof content !== 'string') {
         console.error('⚠️ ensureSOAPStructure received invalid content:', typeof content);
-        console.error('📝 Falling back to empty template');
         return createEmptySOAPTemplate();
     }
-
-    if (content.trim().length === 0) {
-        console.error('⚠️ ensureSOAPStructure received empty content');
-        console.error('📝 Falling back to empty template');
-        return createEmptySOAPTemplate();
-    }
-
-    console.log('✅ Content is valid, checking for SOAP structure...');
 
     // If content already has SOAP headers, enhance the formatting
     if (content.includes('SUBJECTIVE:') && content.includes('OBJECTIVE:') &&
         content.includes('ASSESSMENT:') && content.includes('PLAN:')) {
-        console.log('✅ Found existing SOAP structure, enhancing...');
         return enhanceExistingSOAPStructure(content);
     }
 
-    console.log('⚠️ No SOAP structure found, creating from content...');
     // If no SOAP structure, create intelligent distribution
     return createSOAPFromContent(content, context);
 }
@@ -694,4 +482,56 @@ Follow-up:
     }
 
     return planContent.trim();
+}
+
+/**
+ * Build specialized prompt for transfer of care updates
+ */
+function buildTransferOfCarePrompt(
+    newTranscript: string,
+    transferData: any,
+    clinicalContext: ClinicalContext
+): string {
+    const { previousNote, parsedNote } = transferData;
+
+    const basePrompt = `
+# TRANSFER OF CARE NOTE UPDATE
+
+You are updating a clinical note as part of a transfer of care process. You have the previous resident's note and new clinical information.
+
+## Previous Note:
+${previousNote}
+
+## New Clinical Information:
+${newTranscript}
+
+## Clinical Context:
+- Clinic: ${clinicalContext.clinic}
+- EMR: ${clinicalContext.emr}
+- Visit Type: ${clinicalContext.visitType}
+
+Please update the note appropriately, preserving relevant information from the previous note while incorporating the new clinical data. Maintain the same format and structure as the original note.
+
+**Note: Ensure all content is properly formatted for ${clinicalContext.emr} EMR system.**
+`;
+
+    return basePrompt;
+}
+
+/**
+ * Get patient context information
+ */
+async function getPatientContext(patientId: string) {
+    try {
+        const patient = await patientsService.getPatient(patientId);
+        return patient ? {
+            id: patient.id,
+            name: patient.name,
+            mrn: patient.mrn,
+            dob: patient.dob
+        } : null;
+    } catch (error) {
+        console.error('Error fetching patient context:', error);
+        return null;
+    }
 }
