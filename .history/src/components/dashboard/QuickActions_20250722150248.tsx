@@ -1,4 +1,4 @@
-// src/components/dashboard/QuickActions.tsx - Complete Version with Transfer of Care
+// src/components/dashboard/QuickActions.tsx - Complete Version
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -51,17 +51,6 @@ export default function QuickActions() {
             color: 'bg-orange-500 hover:bg-orange-600',
             onClick: () => router.push('/dashboard/library'),
         },
-        {
-            title: 'Transfer of Care',
-            description: 'Update existing notes intelligently',
-            icon: (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                </svg>
-            ),
-            color: 'bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700',
-            onClick: () => router.push('/dashboard/transfer-care'),
-        },
     ];
 
     return (
@@ -74,7 +63,7 @@ export default function QuickActions() {
             </div>
 
             <div className="p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {actions.map((action) => (
                         <button
                             key={action.title}
