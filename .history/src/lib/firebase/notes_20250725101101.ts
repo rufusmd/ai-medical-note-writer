@@ -17,7 +17,7 @@ import {
     Timestamp,
     DocumentSnapshot
 } from 'firebase/firestore';
-import { db, firebaseUtils } from '@/lib/firebase/config';
+import { db } from '@/lib/firebase/config';
 import { EnhancedNote, NoteSearchFilters, EditAnalytics, NoteVersion } from '@/types/notes';
 
 export interface CreateNoteData {
@@ -45,18 +45,10 @@ export interface UpdateNoteData {
 class NotesService {
     private readonly collectionName = 'notes';
 
-    private validateFirebaseInit(): void {
-        if (!firebaseUtils.isInitialized()) {
-            throw new Error('Firebase not initialized. Please check your configuration.');
-        }
-    }
-
     /**
      * Create a new clinical note
      */
     async createNote(noteData: CreateNoteData): Promise<EnhancedNote> {
-        this.validateFirebaseInit();
-
         try {
             console.log('📝 Creating new clinical note');
 

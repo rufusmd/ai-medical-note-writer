@@ -16,7 +16,7 @@ import {
     updateProfile
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db, firebaseUtils } from '@/lib/firebase/config';
+import { auth, db } from '@/lib/firebase/config';
 
 interface UserProfile {
     uid: string;
@@ -134,10 +134,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Sign in with email and password
     const signIn = async (email: string, password: string): Promise<void> => {
-        if (!firebaseUtils.isInitialized()) {
-            throw new Error('Firebase not initialized. Please check your configuration.');
-        }
-
         try {
             setLoading(true);
             const result = await signInWithEmailAndPassword(auth, email, password);
@@ -161,10 +157,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Sign up with email and password
     const signUp = async (email: string, password: string, displayName: string): Promise<void> => {
-        if (!firebaseUtils.isInitialized()) {
-            throw new Error('Firebase not initialized. Please check your configuration.');
-        }
-
         try {
             setLoading(true);
             const result = await createUserWithEmailAndPassword(auth, email, password);
@@ -200,10 +192,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Sign in with Google
     const signInWithGoogle = async (): Promise<void> => {
-        if (!firebaseUtils.isInitialized()) {
-            throw new Error('Firebase not initialized. Please check your configuration.');
-        }
-
         try {
             setLoading(true);
             const result = await signInWithPopup(auth, googleProvider);
@@ -254,13 +242,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Listen for auth state changes
     useEffect(() => {
-        // Check if Firebase is properly initialized
-        if (!firebaseUtils.isInitialized()) {
-            console.warn('⚠️ Firebase not initialized, skipping auth state listener');
-            setLoading(false);
-            return;
-        }
-
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             try {
                 setLoading(true);

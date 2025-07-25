@@ -76,9 +76,6 @@ export { app, db, auth, storage };
 // Export Firebase config for reference
 export { firebaseConfig };
 
-// Default export for compatibility
-export default { app, db, auth, storage, firebaseConfig };
-
 // Utility functions
 export const firebaseUtils = {
     // Check if Firebase is properly initialized
